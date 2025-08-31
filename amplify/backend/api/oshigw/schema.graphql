@@ -1,0 +1,60 @@
+type User
+  @model
+  @auth(rules: [
+    { allow: owner, ownerField: "id", identityClaim: "sub", operations: [read, update] },
+    { allow: groups, groups: ["admin"] }
+  ]) {
+  id: ID!
+  email: String!
+  name: String
+  role: String
+  avatarUrl: AWSURL
+}
+
+type Attendance
+  @model
+  @auth(rules: [
+    { allow: owner, ownerField: "userId", identityClaim: "sub", operations: [create, read, update, delete] },
+    { allow: groups, groups: ["admin"] }
+  ]) {
+  id: ID!
+  userId: ID!
+  date: AWSDate!
+  clockIn: AWSTime
+  clockOut: AWSTime
+  plannedOff: Boolean
+  note: String
+}
+
+type Project
+  @model
+  @auth(rules: [
+    { allow: owner, ownerField: "managerUserId", identityClaim: "sub", operations: [create, read, update, delete] },
+    { allow: groups, groups: ["admin"] }
+  ]) {
+  id: ID!
+  name: String!
+  managerUserId: ID!
+  startDate: AWSDate
+  endDate: AWSDate
+  description: String
+  tasks: [Task] @hasMany(indexName: "byProject", fields: ["id"])
+}
+
+type Task @model
+  @auth(rules: [
+    { allow: owner, ownerField: "assigneeUserId", identityClaim: "sub", operations: [read, update] },
+    { allow: owner, ownerField: "projectManagerUserId", identityClaim: "sub", operations: [create, read, update, delete] },
+    { allow: groups, groups: ["admin"] }
+  ]) {
+  id: ID!
+  projectId: ID! @index(name: "byProject", sortKeyFields: [])
+  assigneeUserId: ID
+  projectManagerUserId: ID
+  title: String!
+  description: String
+  startDate: AWSDate
+  endDate: AWSDate
+  progress: Int
+  status: String
+}

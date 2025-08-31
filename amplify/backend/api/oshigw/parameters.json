@@ -1,0 +1,11 @@
+{
+  "AppSyncApiName": "oshigw",
+  "DynamoDBBillingMode": "PAY_PER_REQUEST",
+  "DynamoDBEnableServerSideEncryption": false,
+  "AuthCognitoUserPoolId": {
+    "Fn::GetAtt": [
+      "authoshigw51801446",
+      "Outputs.UserPoolId"
+    ]
+  }
+}

@@ -1,0 +1,13 @@
+projects:
+  oshigw:
+    schemaPath: frontend/src/graphql/schema.json
+    includes:
+      - frontend/src/**/*.tsx
+      - frontend/src/**/*.ts
+    excludes:
+      - ./amplify/**
+    extensions:
+      amplify:
+        codeGenTarget: typescript
+        generatedFileName: src/API.ts
+        docsFilePath: frontend/src

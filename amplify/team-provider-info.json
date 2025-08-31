@@ -1,0 +1,23 @@
+{
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-oshigw-dev-eed38-authRole",
+      "UnauthRoleArn": "arn:aws:iam::830410657499:role/amplify-oshigw-dev-eed38-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::830410657499:role/amplify-oshigw-dev-eed38-authRole",
+      "Region": "ap-northeast-1",
+      "DeploymentBucketName": "amplify-oshigw-dev-eed38-deployment",
+      "UnauthRoleName": "amplify-oshigw-dev-eed38-unauthRole",
+      "StackName": "amplify-oshigw-dev-eed38",
+      "StackId": "arn:aws:cloudformation:ap-northeast-1:830410657499:stack/amplify-oshigw-dev-eed38/49063f60-862a-11f0-9388-0ae3c25ab94d",
+      "AmplifyAppId": "dwqueo8w7nvz2"
+    },
+    "categories": {
+      "auth": {
+        "oshigw51801446": {}
+      },
+      "api": {
+        "oshigw": {}
+      }
+    }
+  }
+}

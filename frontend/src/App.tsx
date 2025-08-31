@@ -1,0 +1,29 @@
+import { useState } from 'react'
+import reactLogo from './assets/react.svg'
+import viteLogo from '/vite.svg'
+import { Authenticator } from '@aws-amplify/ui-react'
+import './App.css'
+import '@aws-amplify/ui-react/styles.css'
+import { I18n } from 'aws-amplify/utils'
+import { translations } from '@aws-amplify/ui-react'
+
+// 日本語を適用
+I18n.putVocabularies(translations);
+I18n.setLanguage('ja');
+
+function App() {
+  const [count, setCount] = useState(0)
+
+  return (
+    <Authenticator>
+      {({ signOut, user }) => (
+        <div>
+          <h1>ようこそ {user?.username} さん</h1>
+          <button onClick={signOut}>サインアウト</button>
+        </div>
+      )}
+    </Authenticator>
+  );
+}
+
+export default App
