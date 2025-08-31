@@ -1,16 +1,16 @@
 version: 1
 frontend:
-  appRoot: frontend   # React アプリがあるディレクトリ
+  appRoot: frontend
   phases:
     preBuild:
       commands:
-        - npm i -g pnpm
+        - npm install -g pnpm
         - pnpm install
     build:
       commands:
         - pnpm run build
   artifacts:
-    baseDirectory: dist   # vite build の出力先
+    baseDirectory: dist
     files:
       - '**/*'
   cache:
