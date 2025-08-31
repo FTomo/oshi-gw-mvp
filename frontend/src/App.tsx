@@ -1,6 +1,3 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import { Authenticator } from '@aws-amplify/ui-react'
 import './App.css'
 import '@aws-amplify/ui-react/styles.css'
@@ -12,7 +9,6 @@ I18n.putVocabularies(translations);
 I18n.setLanguage('ja');
 
 function App() {
-  const [count, setCount] = useState(0)
 
   return (
     <Authenticator>
