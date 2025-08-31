@@ -5,21 +5,28 @@ applications:
       phases:
         preBuild:
           commands:
-            - corepack enable       # pnpmを使う場合
+            - corepack enable
             - pnpm install
         build:
           commands:
             - pnpm run build
       artifacts:
-        baseDirectory: dist   # Vite の出力先
+        baseDirectory: dist
         files:
           - '**/*'
       cache:
         paths:
           - node_modules/**/*
           - pnpm-lock.yaml
-    customHeaders:
-      - pattern: '**/*'
-        headers:
-          - key: Cache-Control
-            value: max-age=0,no-cache,no-store,must-revalidate
+    backend:
+      phases:
+        build:
+          commands:
+            - amplifyPush --simple
+      artifacts:
+        baseDirectory: .
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - amplify/**/*
