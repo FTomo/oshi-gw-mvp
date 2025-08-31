@@ -1,19 +1,24 @@
 version: 1
-frontend:
-  appRoot: frontend   # ここが重要！ frontend をルートとして認識させる
-  phases:
-    preBuild:
-      commands:
-        - npm i -g pnpm
-        - pnpm install
-    build:
-      commands:
-        - pnpm run build
-  artifacts:
-    baseDirectory: dist
-    files:
-      - '**/*'
-  cache:
-    paths:
-      - node_modules/**/*
-
+applications:
+  - appRoot: frontend
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            - npm i -g pnpm
+            - pnpm install
+        build:
+          commands:
+            - pnpm run build
+      artifacts:
+        baseDirectory: dist
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - node_modules/**/*
+    backend:
+      phases:
+        build:
+          commands:
+            - amplifyPush --simple
