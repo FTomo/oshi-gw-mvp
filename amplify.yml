@@ -1,18 +1,25 @@
 version: 1
-frontend:
-  phases:
-    preBuild:
-      commands:
-        - npm i -g pnpm
-        - pnpm install
-    build:
-      commands:
-        - pnpm run build
-  artifacts:
-    baseDirectory: dist
-    files:
-      - '**/*'
-  cache:
-    paths:
-      - node_modules/**/*
-
+applications:
+  - appRoot: frontend
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            - corepack enable       # pnpmを使う場合
+            - pnpm install
+        build:
+          commands:
+            - pnpm run build
+      artifacts:
+        baseDirectory: dist   # Vite の出力先
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - node_modules/**/*
+          - pnpm-lock.yaml
+    customHeaders:
+      - pattern: '**/*'
+        headers:
+          - key: Cache-Control
+            value: max-age=0,no-cache,no-store,must-revalidate
