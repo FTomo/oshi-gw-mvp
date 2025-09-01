@@ -1,7 +1,7 @@
 type User
   @model
   @auth(rules: [
-    { allow: owner, ownerField: "id", identityClaim: "sub", operations: [read, update] },
+    { allow: owner, ownerField: "id", identityClaim: "sub", operations: [create, read, update] },
     { allow: groups, groups: ["admin"] }
   ]) {
   id: ID!
