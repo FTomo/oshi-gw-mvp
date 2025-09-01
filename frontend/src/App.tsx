@@ -1,25 +1,81 @@
+// =============================
+// src/App.tsx（Hook順序エラー修正）
+// =============================
+import { Routes, Route, Navigate } from 'react-router-dom'
+import Layout from './components/layout/Layout'
+import Dashboard from './pages/Dashboard'
+import Profile from './pages/Profile'
+
+// Amplify UI（既存仕様）
 import { Authenticator } from '@aws-amplify/ui-react'
-import './App.css'
 import '@aws-amplify/ui-react/styles.css'
+import './App.css'
 import { I18n } from 'aws-amplify/utils'
 import { translations } from '@aws-amplify/ui-react'
 
-// 日本語を適用
-I18n.putVocabularies(translations);
-I18n.setLanguage('ja');
+import { useEffect } from 'react'
+import { useSetRecoilState } from 'recoil'
+import { currentUserAtom, type UserInfo } from './state/auth'
 
-function App() {
+// 日本語化（既存どおり）
+I18n.putVocabularies(translations)
+I18n.setLanguage('ja')
 
-  return (
-    <Authenticator>
-      {({ signOut, user }) => (
-        <div>
-          <h1>ようこそ {user?.username} さん</h1>
-          <button onClick={signOut}>サインアウト</button>
-        </div>
-      )}
-    </Authenticator>
-  );
+// Amplify UI が渡してくる user の最小型（any禁止のため簡易定義）
+type AmplifyUserLike = {
+  userId?: string
+  username?: string
+  signInDetails?: { loginId?: string }
+  attributes?: { name?: string; picture?: string; email?: string; sub?: string }
 }
 
-export default App
+function toUserInfo(a: AmplifyUserLike): UserInfo {
+  return {
+    sub: a.userId ?? a.attributes?.sub ?? a.username ?? 'unknown',
+    email: a.attributes?.email ?? a.signInDetails?.loginId ?? a.username ?? '',
+    name: a.attributes?.name ?? a.username ?? '',
+    avatarUrl: a.attributes?.picture ?? '',
+  }
+}
+
+// 子コンポーネントに分離してここで Hook を使う（Rules of Hooks 準拠）
+function AuthenticatedApp({
+  amplifyUser,
+  onSignOut,
+}: {
+  amplifyUser: AmplifyUserLike
+  onSignOut: () => void
+}) {
+  const setUser = useSetRecoilState(currentUserAtom)
+
+  useEffect(() => {
+    setUser(toUserInfo(amplifyUser))
+  }, [amplifyUser, setUser])
+
+  return (
+    <Layout>
+      <Routes>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+
+      {/* 直接渡さずにラップして undefined を吸収 */}
+      <button onClick={() => onSignOut?.()}>サインアウト</button>
+    </Layout>
+  )
+}
+
+export default function App() {
+  return (
+    <Authenticator>
+      {({ signOut, user }) =>
+        user ? (
+          <AuthenticatedApp amplifyUser={user as AmplifyUserLike} onSignOut={signOut} />
+        ) : (
+          <div>Loading...</div>
+        )
+      }
+    </Authenticator>
+  )
+}

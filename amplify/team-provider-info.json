@@ -19,5 +19,26 @@
         "oshigw": {}
       }
     }
+  },
+  "prod": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-oshigw-prod-c374a-authRole",
+      "UnauthRoleArn": "arn:aws:iam::830410657499:role/amplify-oshigw-prod-c374a-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::830410657499:role/amplify-oshigw-prod-c374a-authRole",
+      "Region": "ap-northeast-1",
+      "DeploymentBucketName": "amplify-oshigw-prod-c374a-deployment",
+      "UnauthRoleName": "amplify-oshigw-prod-c374a-unauthRole",
+      "StackName": "amplify-oshigw-prod-c374a",
+      "StackId": "arn:aws:cloudformation:ap-northeast-1:830410657499:stack/amplify-oshigw-prod-c374a/0e9ebb70-86bd-11f0-9b01-0af3383f7cb9",
+      "AmplifyAppId": "dwqueo8w7nvz2"
+    },
+    "categories": {
+      "auth": {
+        "oshigw51801446": {}
+      },
+      "api": {
+        "oshigw": {}
+      }
+    }
   }
 }
