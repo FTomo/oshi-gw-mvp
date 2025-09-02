@@ -1,0 +1,26 @@
+{
+  "compounds": [
+    {
+      "name": "Vite Full Debug",
+      "configurations": ["Vite Dev Server", "Vite Chrome Debug"]
+    }
+  ],
+  "configurations": [
+    {
+      "type": "pwa-node",
+      "request": "launch",
+      "name": "Vite Dev Server",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "${workspaceFolder}/frontend",
+      "console": "integratedTerminal"
+    },
+    {
+      "type": "pwa-chrome",
+      "request": "launch",
+      "name": "Vite Chrome Debug",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/frontend/src"
+    }
+  ]
+}

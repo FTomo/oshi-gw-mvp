@@ -16,6 +16,7 @@ import { translations } from '@aws-amplify/ui-react'
 import { useEffect } from 'react'
 import { useSetRecoilState } from 'recoil'
 import { currentUserAtom, type UserInfo } from './state/auth'
+import { useUser } from './hooks/useUser'
 
 // 日本語化（既存どおり）
 I18n.putVocabularies(translations)
@@ -47,10 +48,14 @@ function AuthenticatedApp({
   onSignOut: () => void
 }) {
   const setUser = useSetRecoilState(currentUserAtom)
+  const { ensureSyncedOnSignIn } = useUser()
 
   useEffect(() => {
-    setUser(toUserInfo(amplifyUser))
-  }, [amplifyUser, setUser])
+    const u: UserInfo = toUserInfo(amplifyUser)
+    setUser(u)
+    // ★ Userテーブル同期（未登録なら作成、登録済なら最小更新）
+    void ensureSyncedOnSignIn(u)
+  }, [amplifyUser, setUser, ensureSyncedOnSignIn])
 
   return (
     <Layout>
