@@ -26,35 +26,45 @@ type Attendance
   note: String
 }
 
-type Project
-  @model
-  @auth(rules: [
-    { allow: owner, ownerField: "managerUserId", identityClaim: "sub", operations: [create, read, update, delete] },
-    { allow: groups, groups: ["admin"] }
-  ]) {
+type Project @model
+@auth(rules: [
+  { allow: owner, ownerField: "managerUserId", identityClaim: "sub" },
+  { allow: groups, groups: ["admin"] }
+]) {
   id: ID!
   name: String!
   managerUserId: ID!
   startDate: AWSDate
   endDate: AWSDate
   description: String
+  participantsJson: AWSJSON        # [{ "id": "...", "name": "..." }, ...] など
+  editableUserIdsJson: AWSJSON     # ["sub1","sub2",...]
+  readableUserIdsJson: AWSJSON     # ["sub3","sub4",...]
   tasks: [Task] @hasMany(indexName: "byProject", fields: ["id"])
 }
 
 type Task @model
-  @auth(rules: [
-    { allow: owner, ownerField: "assigneeUserId", identityClaim: "sub", operations: [read, update] },
-    { allow: owner, ownerField: "projectManagerUserId", identityClaim: "sub", operations: [create, read, update, delete] },
-    { allow: groups, groups: ["admin"] }
-  ]) {
+@auth(rules: [
+  { allow: owner, ownerField: "projectManagerUserId", identityClaim: "sub" },
+  { allow: groups, groups: ["admin"] }
+]) {
   id: ID!
-  projectId: ID! @index(name: "byProject", sortKeyFields: [])
-  assigneeUserId: ID
+  # projectId を起点に 2 つのインデックス (createdAt / numberPath) を付与
+  projectId: ID! @index(name: "byProject", queryField: "tasksByProject", sortKeyFields: ["createdAt"]) @index(name: "byProjectNumberPath", queryField: "tasksByProjectNumberPath", sortKeyFields: ["numberPath"])
+  # 親子関係用インデックス（兄弟順 sequence ソート）
+  parentTaskId: ID @index(name: "byParentTask", queryField: "tasksByParent", sortKeyFields: ["sequence"])
   projectManagerUserId: ID
+  assigneeUserId: ID
+  level: Int!
+  sequence: Int!
+  numberPath: String!
   title: String!
   description: String
   startDate: AWSDate
   endDate: AWSDate
   progress: Int
   status: String
+  # AppSync 自動追加フィールド
+  createdAt: AWSDateTime
+  updatedAt: AWSDateTime
 }

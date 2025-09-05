@@ -94,6 +94,9 @@ export const getProject = /* GraphQL */ `query GetProject($id: ID!) {
     startDate
     endDate
     description
+    participantsJson
+    editableUserIdsJson
+    readableUserIdsJson
     tasks {
       nextToken
       __typename
@@ -120,6 +123,9 @@ export const listProjects = /* GraphQL */ `query ListProjects(
       startDate
       endDate
       description
+      participantsJson
+      editableUserIdsJson
+      readableUserIdsJson
       createdAt
       updatedAt
       __typename
@@ -136,8 +142,12 @@ export const getTask = /* GraphQL */ `query GetTask($id: ID!) {
   getTask(id: $id) {
     id
     projectId
-    assigneeUserId
+    parentTaskId
     projectManagerUserId
+    assigneeUserId
+    level
+    sequence
+    numberPath
     title
     description
     startDate
@@ -159,8 +169,12 @@ export const listTasks = /* GraphQL */ `query ListTasks(
     items {
       id
       projectId
-      assigneeUserId
+      parentTaskId
       projectManagerUserId
+      assigneeUserId
+      level
+      sequence
+      numberPath
       title
       description
       startDate
@@ -176,15 +190,17 @@ export const listTasks = /* GraphQL */ `query ListTasks(
   }
 }
 ` as GeneratedQuery<APITypes.ListTasksQueryVariables, APITypes.ListTasksQuery>;
-export const tasksByProjectId = /* GraphQL */ `query TasksByProjectId(
+export const tasksByProject = /* GraphQL */ `query TasksByProject(
   $projectId: ID!
+  $createdAt: ModelStringKeyConditionInput
   $sortDirection: ModelSortDirection
   $filter: ModelTaskFilterInput
   $limit: Int
   $nextToken: String
 ) {
-  tasksByProjectId(
+  tasksByProject(
     projectId: $projectId
+    createdAt: $createdAt
     sortDirection: $sortDirection
     filter: $filter
     limit: $limit
@@ -193,8 +209,12 @@ export const tasksByProjectId = /* GraphQL */ `query TasksByProjectId(
     items {
       id
       projectId
-      assigneeUserId
+      parentTaskId
       projectManagerUserId
+      assigneeUserId
+      level
+      sequence
+      numberPath
       title
       description
       startDate
@@ -213,3 +233,6 @@ export const tasksByProjectId = /* GraphQL */ `query TasksByProjectId(
   APITypes.TasksByProjectIdQueryVariables,
   APITypes.TasksByProjectIdQuery
 >;
+// NOTE: schema 改修前のインデックス用クエリ (tasksByProjectNumberPath, tasksByParent) は
+// まだ codegen に反映されていないため一旦削除 / 無効化。
+// 必要になった段階で amplify push -> codegen 後に再生成された queries.ts を使用してください。

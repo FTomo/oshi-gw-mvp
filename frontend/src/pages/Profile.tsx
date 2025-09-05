@@ -1,10 +1,11 @@
 // =============================
 // src/pages/Profile.tsx
 // =============================
-import { useRecoilState, useRecoilValue } from 'recoil'
+import { useRecoilState } from 'recoil'
 import { currentUserAtom } from '../state/auth'
 import { Box, Button, Snackbar, Stack, TextField, Typography, Avatar } from '@mui/material'
 import { useState } from 'react'
+import { useUser } from '../hooks/useUser'
 
 export default function Profile() {
   const [user, setUser] = useRecoilState(currentUserAtom)
@@ -12,8 +13,11 @@ export default function Profile() {
 
   const [name, setName] = useState(user?.name ?? '')
   const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl ?? '')
+const { updateMyProfile } = useUser()
 
   const save = async () => {
+    // DBに保存
+    const updated = await updateMyProfile({ name, avatarUrl })
     // TODO: Amplify GraphQL mutation or Cognito user attributes update
     setUser(u => (u ? { ...u, name, avatarUrl } : u))
     setOpen(true)

@@ -5,6 +5,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import Layout from './components/layout/Layout'
 import Dashboard from './pages/Dashboard'
 import Profile from './pages/Profile'
+import AttendancePage from './pages/Attendance'
 
 // Amplify UI（既存仕様）
 import { Authenticator } from '@aws-amplify/ui-react'
@@ -58,15 +59,15 @@ function AuthenticatedApp({
   }, [amplifyUser, setUser, ensureSyncedOnSignIn])
 
   return (
-    <Layout>
+  <Layout onSignOut={onSignOut}>
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/profile" element={<Profile />} />
+    <Route path="/attendance" element={<AttendancePage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
-      {/* 直接渡さずにラップして undefined を吸収 */}
-      <button onClick={() => onSignOut?.()}>サインアウト</button>
+  {/* SignOut ボタンは Header メニューで表示されるため重複削除 */}
     </Layout>
   )
 }
@@ -74,13 +75,14 @@ function AuthenticatedApp({
 export default function App() {
   return (
     <Authenticator>
-      {({ signOut, user }) =>
-        user ? (
-          <AuthenticatedApp amplifyUser={user as AmplifyUserLike} onSignOut={signOut} />
+      {({ signOut, user }) => {
+        const safeSignOut = () => { signOut?.() }
+        return user ? (
+          <AuthenticatedApp amplifyUser={user as AmplifyUserLike} onSignOut={safeSignOut} />
         ) : (
           <div>Loading...</div>
         )
-      }
+      }}
     </Authenticator>
   )
 }

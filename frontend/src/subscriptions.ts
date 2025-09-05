@@ -2,7 +2,7 @@
 /* eslint-disable */
 // this is an auto generated file. This will be overwritten
 
-import * as APITypes from "../../src/API";
+import * as APITypes from "./API";
 type GeneratedSubscription<InputType, OutputType> = string & {
   __generatedSubscriptionInput: InputType;
   __generatedSubscriptionOutput: OutputType;
@@ -139,6 +139,9 @@ export const onCreateProject = /* GraphQL */ `subscription OnCreateProject(
     startDate
     endDate
     description
+    participantsJson
+    editableUserIdsJson
+    readableUserIdsJson
     tasks {
       nextToken
       __typename
@@ -163,6 +166,9 @@ export const onUpdateProject = /* GraphQL */ `subscription OnUpdateProject(
     startDate
     endDate
     description
+    participantsJson
+    editableUserIdsJson
+    readableUserIdsJson
     tasks {
       nextToken
       __typename
@@ -187,6 +193,9 @@ export const onDeleteProject = /* GraphQL */ `subscription OnDeleteProject(
     startDate
     endDate
     description
+    participantsJson
+    editableUserIdsJson
+    readableUserIdsJson
     tasks {
       nextToken
       __typename
@@ -202,18 +211,17 @@ export const onDeleteProject = /* GraphQL */ `subscription OnDeleteProject(
 >;
 export const onCreateTask = /* GraphQL */ `subscription OnCreateTask(
   $filter: ModelSubscriptionTaskFilterInput
-  $assigneeUserId: String
   $projectManagerUserId: String
 ) {
-  onCreateTask(
-    filter: $filter
-    assigneeUserId: $assigneeUserId
-    projectManagerUserId: $projectManagerUserId
-  ) {
+  onCreateTask(filter: $filter, projectManagerUserId: $projectManagerUserId) {
     id
     projectId
-    assigneeUserId
+    parentTaskId
     projectManagerUserId
+    assigneeUserId
+    level
+    sequence
+    numberPath
     title
     description
     startDate
@@ -231,18 +239,17 @@ export const onCreateTask = /* GraphQL */ `subscription OnCreateTask(
 >;
 export const onUpdateTask = /* GraphQL */ `subscription OnUpdateTask(
   $filter: ModelSubscriptionTaskFilterInput
-  $assigneeUserId: String
   $projectManagerUserId: String
 ) {
-  onUpdateTask(
-    filter: $filter
-    assigneeUserId: $assigneeUserId
-    projectManagerUserId: $projectManagerUserId
-  ) {
+  onUpdateTask(filter: $filter, projectManagerUserId: $projectManagerUserId) {
     id
     projectId
-    assigneeUserId
+    parentTaskId
     projectManagerUserId
+    assigneeUserId
+    level
+    sequence
+    numberPath
     title
     description
     startDate
@@ -260,18 +267,17 @@ export const onUpdateTask = /* GraphQL */ `subscription OnUpdateTask(
 >;
 export const onDeleteTask = /* GraphQL */ `subscription OnDeleteTask(
   $filter: ModelSubscriptionTaskFilterInput
-  $assigneeUserId: String
   $projectManagerUserId: String
 ) {
-  onDeleteTask(
-    filter: $filter
-    assigneeUserId: $assigneeUserId
-    projectManagerUserId: $projectManagerUserId
-  ) {
+  onDeleteTask(filter: $filter, projectManagerUserId: $projectManagerUserId) {
     id
     projectId
-    assigneeUserId
+    parentTaskId
     projectManagerUserId
+    assigneeUserId
+    level
+    sequence
+    numberPath
     title
     description
     startDate

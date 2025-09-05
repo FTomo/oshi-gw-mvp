@@ -6,6 +6,7 @@ import Layout from './components/layout/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
 import Dashboard from './pages/Dashboard'
 import Profile from './pages/Profile'
+import AttendancePage from './pages/Attendance'
 
 export const router = createBrowserRouter([
   {
@@ -18,6 +19,10 @@ export const router = createBrowserRouter([
       {
         path: '/profile',
         element: <Layout><Profile /></Layout>,
+      },
+      {
+        path: '/attendance',
+        element: <Layout><AttendancePage /></Layout>,
       },
     ],
   },

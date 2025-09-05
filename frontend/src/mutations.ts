@@ -139,6 +139,9 @@ export const createProject = /* GraphQL */ `mutation CreateProject(
     startDate
     endDate
     description
+    participantsJson
+    editableUserIdsJson
+    readableUserIdsJson
     tasks {
       nextToken
       __typename
@@ -163,6 +166,9 @@ export const updateProject = /* GraphQL */ `mutation UpdateProject(
     startDate
     endDate
     description
+    participantsJson
+    editableUserIdsJson
+    readableUserIdsJson
     tasks {
       nextToken
       __typename
@@ -187,6 +193,9 @@ export const deleteProject = /* GraphQL */ `mutation DeleteProject(
     startDate
     endDate
     description
+    participantsJson
+    editableUserIdsJson
+    readableUserIdsJson
     tasks {
       nextToken
       __typename
@@ -207,8 +216,12 @@ export const createTask = /* GraphQL */ `mutation CreateTask(
   createTask(input: $input, condition: $condition) {
     id
     projectId
-    assigneeUserId
+    parentTaskId
     projectManagerUserId
+    assigneeUserId
+    level
+    sequence
+    numberPath
     title
     description
     startDate
@@ -231,8 +244,12 @@ export const updateTask = /* GraphQL */ `mutation UpdateTask(
   updateTask(input: $input, condition: $condition) {
     id
     projectId
-    assigneeUserId
+    parentTaskId
     projectManagerUserId
+    assigneeUserId
+    level
+    sequence
+    numberPath
     title
     description
     startDate
@@ -255,8 +272,12 @@ export const deleteTask = /* GraphQL */ `mutation DeleteTask(
   deleteTask(input: $input, condition: $condition) {
     id
     projectId
-    assigneeUserId
+    parentTaskId
     projectManagerUserId
+    assigneeUserId
+    level
+    sequence
+    numberPath
     title
     description
     startDate

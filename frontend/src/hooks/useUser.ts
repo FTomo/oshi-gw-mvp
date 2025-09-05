@@ -11,15 +11,33 @@ export function useUser() {
   const ensureSyncedOnSignIn = useCallback(async (authUser: UserInfo) => {
     setLoading(true);
     try {
-      const synced = await userService.ensureExistsFromAuth({
-        sub: authUser.sub,
-        email: authUser.email,
-        name: authUser.name,
-        avatarUrl: authUser.avatarUrl,
-      });
-      // Recoil の currentUserAtom はUI用の軽量情報なので、必要ならここで補完
-      setMe((prev) => prev ?? { ...authUser });
-      return synced;
+      // DBにユーザーが存在するか確認
+      const dbUser = await userService.getById(authUser.sub);
+      if (dbUser) {
+        // idが一致しない場合は認証エラーとしてサインアウト
+        if (dbUser.id !== authUser.sub) {
+          alert('認証情報とDB情報が一致しません。再度サインインしてください。');
+          // サインアウト処理（例: location.reload() や onSignOutコールなど）
+          if (typeof window !== 'undefined') {
+            window.location.href = '/signout'; // サインアウトページへ遷移（適宜修正）
+          }
+          return null;
+        }
+        // 差分がなければDBの情報をRecoilに格納
+        setMe(toUserInfo(dbUser));
+        return dbUser;
+      } else {
+        // DBに存在しない場合は新規作成
+        const created = await userService.create({
+          id: authUser.sub,
+          email: authUser.email,
+          name: authUser.name ?? null,
+          avatarUrl: authUser.avatarUrl ?? null,
+          role: null,
+        });
+        setMe((prev) => prev ?? { ...authUser });
+        return created;
+      }
     } finally {
       setLoading(false);
     }
@@ -37,7 +55,7 @@ export function useUser() {
     if (!me?.sub) throw new Error('not authenticated');
     const updated = await userService.update(me.sub, patch);
     // UI用の currentUserAtom も反映（name / avatarUrl）
-    setMe((prev) => prev ? { ...prev, name: updated.name ?? prev.name, avatarUrl: updated.avatarUrl ?? prev.avatarUrl } : prev);
+    setMe((prev) => prev ? { ...prev, name: updated?.name ?? prev.name, avatarUrl: updated?.avatarUrl ?? prev.avatarUrl } : prev);
     return updated;
   }, [me, setMe]);
 
@@ -47,6 +65,7 @@ export function useUser() {
   }, [me]);
 
   return {
+    me,
     loading,
     ensureSyncedOnSignIn,
     getById,
@@ -54,4 +73,13 @@ export function useUser() {
     updateMyProfile,
     removeMe,
   };
+}
+
+function toUserInfo(dbUser: DbUser): UserInfo {
+  return {
+    sub: dbUser.id,
+    email: dbUser.email,
+    name: dbUser.name ?? '',
+    avatarUrl: dbUser.avatarUrl ?? '',
+  }
 }
