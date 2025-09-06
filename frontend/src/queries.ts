@@ -190,7 +190,7 @@ export const listTasks = /* GraphQL */ `query ListTasks(
   }
 }
 ` as GeneratedQuery<APITypes.ListTasksQueryVariables, APITypes.ListTasksQuery>;
-export const tasksByProject = /* GraphQL */ `query TasksByProject(
+export const tasksByProjectId = /* GraphQL */ `query TasksByProjectId(
   $projectId: ID!
   $createdAt: ModelStringKeyConditionInput
   $sortDirection: ModelSortDirection
@@ -198,7 +198,7 @@ export const tasksByProject = /* GraphQL */ `query TasksByProject(
   $limit: Int
   $nextToken: String
 ) {
-  tasksByProject(
+  tasksByProjectId(
     projectId: $projectId
     createdAt: $createdAt
     sortDirection: $sortDirection

@@ -14,6 +14,7 @@ export function SideMenu({ open, onClose }: { open: boolean; onClose: () => void
         <List>
           <ListItemButton selected={loc.pathname === '/'} onClick={go('/')}> <ListItemText primary="ダッシュボード" /> </ListItemButton>
           <ListItemButton selected={loc.pathname.startsWith('/profile')} onClick={go('/profile')}> <ListItemText primary="プロフィール" /> </ListItemButton>
+          <ListItemButton selected={loc.pathname.startsWith('/projects')} onClick={go('/projects')}> <ListItemText primary="プロジェクト" /> </ListItemButton>
         </List>
         <List subheader={<ListSubheader component="div">勤怠管理</ListSubheader>}>
           <ListItemButton selected={loc.pathname.startsWith('/attendance')} onClick={go('/attendance')}> <ListItemText primary="勤怠カレンダー" /> </ListItemButton>

@@ -6,6 +6,8 @@ import Layout from './components/layout/Layout'
 import Dashboard from './pages/Dashboard'
 import Profile from './pages/Profile'
 import AttendancePage from './pages/Attendance'
+import ProjectList from './pages/ProjectList'
+import TaskDetail from './pages/TaskDetail'
 
 // Amplify UI（既存仕様）
 import { Authenticator } from '@aws-amplify/ui-react'
@@ -63,7 +65,9 @@ function AuthenticatedApp({
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/profile" element={<Profile />} />
-    <Route path="/attendance" element={<AttendancePage />} />
+  <Route path="/attendance" element={<AttendancePage />} />
+  <Route path="/projects" element={<ProjectList />} />
+  <Route path="/projects/:projectId" element={<TaskDetail />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 

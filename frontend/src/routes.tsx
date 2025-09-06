@@ -7,6 +7,8 @@ import ProtectedRoute from './components/ProtectedRoute'
 import Dashboard from './pages/Dashboard'
 import Profile from './pages/Profile'
 import AttendancePage from './pages/Attendance'
+import ProjectList from './pages/ProjectList'
+import TaskDetail from './pages/TaskDetail'
 
 export const router = createBrowserRouter([
   {
@@ -23,6 +25,14 @@ export const router = createBrowserRouter([
       {
         path: '/attendance',
         element: <Layout><AttendancePage /></Layout>,
+      },
+      {
+        path: '/projects',
+        element: <Layout><ProjectList /></Layout>,
+      },
+      {
+        path: '/projects/:projectId',
+        element: <Layout><TaskDetail /></Layout>,
       },
     ],
   },
