@@ -1,0 +1,31 @@
+.taskDetail {
+  /* TaskDetail page scoped styles root */
+}
+
+.toolbarA {
+  gap: 8px;
+}
+
+.toolbarB {
+  gap: 8px;
+}
+
+.scrollX {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.fullScreenOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background-color: #fff;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+main .css-kwqabc-MuiContainer-root {
+    display: block ;
+}

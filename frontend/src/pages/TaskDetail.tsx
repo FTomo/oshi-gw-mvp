@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Button, Card, CardContent, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField, Typography, Autocomplete } from '@mui/material';
+import styles from './TaskDetail.module.css';
 import { useParams } from 'react-router-dom';
 import { useProject } from '../hooks/useProject';
 import { useTask } from '../hooks/useTask';
@@ -18,8 +19,11 @@ export default function TaskDetail() {
   const [loading, setLoading] = useState(true);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [participants, setParticipants] = useState<ProjectParticipant[]>([]);
+  const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.Month); // ボタンブロックB: 月/週/日
+  const [fullScreen, setFullScreen] = useState(false); // ボタンブロックB: 全画面
   const [openParticipants, setOpenParticipants] = useState(false);
   const [editParticipants, setEditParticipants] = useState<ProjectParticipant[]>([]);
+  const [pendingDates, setPendingDates] = useState<Record<string, { startDate?: string | null; endDate?: string | null }>>({});
 
   // Root create dialog
   const [openNew, setOpenNew] = useState(false);
@@ -90,8 +94,13 @@ export default function TaskDetail() {
     if (ganttTasks.length > 0) {
       return ganttTasks.map(gt => {
         const isSel = selectedTaskId === gt.id;
+        const override = pendingDates[String((gt as any).id)] || {};
+        const startOverride = override.startDate ? new Date(override.startDate) : undefined;
+        const endOverride = override.endDate ? new Date(override.endDate) : undefined;
         return {
           ...gt,
+          start: startOverride ?? (gt as any).start,
+          end: endOverride ?? (gt as any).end,
           // 左ペインで担当列を別表示するため、name は純粋な説明のみ
           name: gt.name,
           styles: {
@@ -117,10 +126,10 @@ export default function TaskDetail() {
         project: projectId,
       },
     ];
-  }, [ganttTasks, items, participants, projectId, selectedTaskId]);
+  }, [ganttTasks, items, participants, projectId, selectedTaskId, pendingDates]);
 
   return (
-    <Box>
+    <Box className={styles.taskDetail}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="h6">プロジェクト: {projectName}</Typography>
         <Button variant="contained" onClick={() => { setTitle(''); setRootStart(''); setRootEnd(''); setOpenNew(true); }}>ルートタスク追加</Button>
@@ -132,7 +141,7 @@ export default function TaskDetail() {
             ガントチャート
           </Typography>
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-            <Box display="flex" gap={1}>
+            <Box display="flex" className={styles.toolbarA}>
               {ganttTasks.length === 0 && (
                 <Button size="small" variant="outlined" onClick={() => { setTitle(''); setRootStart(''); setRootEnd(''); setOpenNew(true); }}>
                   最初のタスクを編集
@@ -187,15 +196,29 @@ export default function TaskDetail() {
             </Typography>
           </Box>
 
+          {/* ボタンブロックB: 表示切替 + 全画面 */}
+          <Box display="flex" className={styles.toolbarB} justifyContent="flex-end" mb={1}>
+            <Button size="small" variant={viewMode === ViewMode.Month ? 'contained' : 'outlined'} onClick={() => setViewMode(ViewMode.Month)}>月</Button>
+            <Button size="small" variant={viewMode === ViewMode.Week ? 'contained' : 'outlined'} onClick={() => setViewMode(ViewMode.Week)}>週</Button>
+            <Button size="small" variant={viewMode === ViewMode.Day ? 'contained' : 'outlined'} onClick={() => setViewMode(ViewMode.Day)}>日</Button>
+            <Button size="small" variant="outlined" onClick={() => setFullScreen(s => !s)}>{fullScreen ? '全画面解除' : '全画面'}</Button>
+          </Box>
+
           {!loading && (
+            <Box className={styles.scrollX}>
             <Gantt
               tasks={visualTasks as any}
-              viewMode={ViewMode.Month}
+              viewMode={viewMode}
               locale="ja-JP"
               listCellWidth={"740px"}
-              columnWidth={48}
+              columnWidth={viewMode === ViewMode.Day ? 64 : 48}
               rowHeight={40}
-              onDateChange={() => { /* 後続で日付変更による更新を実装 */ }}
+              onDateChange={(task: any) => {
+                if (!task || task.id === 'virtual-root') return;
+                const start = task.start instanceof Date ? task.start.toISOString().slice(0, 10) : undefined;
+                const end = task.end instanceof Date ? task.end.toISOString().slice(0, 10) : undefined;
+                setPendingDates(prev => ({ ...prev, [String(task.id)]: { startDate: start, endDate: end } }));
+              }}
               onDoubleClick={(task: any) => {
                 if (!task || task.id === 'virtual-root') return;
                 setSelectedTaskId(task.id);
@@ -293,9 +316,215 @@ export default function TaskDetail() {
                 </div>
               )}
             />
+            {Object.keys(pendingDates).length > 0 && (
+              <Box display="flex" justifyContent="flex-end" mt={1}>
+                <Button size="small" variant="contained" onClick={async () => {
+                  const entries = Object.entries(pendingDates);
+                  for (const [id, patch] of entries) {
+                    await update(id, { startDate: patch.startDate ?? null, endDate: patch.endDate ?? null });
+                  }
+                  setPendingDates({});
+                }}>変更を反映</Button>
+              </Box>
+            )}
+            </Box>
           )}
         </CardContent>
       </Card>
+
+      {/* 全画面オーバーレイ */}
+      {fullScreen && (
+        <Box className={styles.fullScreenOverlay}>
+          <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+            <Typography variant="subtitle1">ガントチャート（全画面）</Typography>
+            <Box display="flex" gap={1}>
+              <Button size="small" variant={viewMode === ViewMode.Month ? 'contained' : 'outlined'} onClick={() => setViewMode(ViewMode.Month)}>月</Button>
+              <Button size="small" variant={viewMode === ViewMode.Week ? 'contained' : 'outlined'} onClick={() => setViewMode(ViewMode.Week)}>週</Button>
+              <Button size="small" variant={viewMode === ViewMode.Day ? 'contained' : 'outlined'} onClick={() => setViewMode(ViewMode.Day)}>日</Button>
+              <Button size="small" variant="contained" color="primary" onClick={() => setFullScreen(false)}>閉じる</Button>
+            </Box>
+          </Box>
+          {/* 全画面用のボタンブロックA */}
+          <Box display="flex" className={styles.toolbarA} justifyContent="space-between" alignItems="center" mb={1}>
+            <Box display="flex" className={styles.toolbarA}>
+              {ganttTasks.length === 0 && (
+                <Button size="small" variant="outlined" onClick={() => { setTitle(''); setRootStart(''); setRootEnd(''); setOpenNew(true); }}>
+                  最初のタスクを編集
+                </Button>
+              )}
+              <Button size="small" variant="outlined" onClick={() => { setEditParticipants(participants); setOpenParticipants(true); }}>担当者</Button>
+              <Button
+                size="small"
+                variant="contained"
+                disabled={!selectedTaskId || !items.find(t => t.id === selectedTaskId && t.level === 1)}
+                onClick={() => {
+                  const parent = items.find(t => t.id === selectedTaskId);
+                  if (!parent) return;
+                  setChildParentId(parent.id);
+                  setChildTitle('');
+                  setChildAssigneeId(null);
+                  setChildStart('');
+                  setChildEnd('');
+                  setOpenChild(true);
+                }}
+              >
+                子タスク追加
+              </Button>
+              <Button
+                size="small"
+                variant="outlined"
+                disabled={!selectedTaskId}
+                onClick={() => {
+                  const cur = items.find(t => t.id === selectedTaskId);
+                  if (!cur) return;
+                  setEditTitle(cur.title);
+                  setEditStart(cur.startDate ? String(cur.startDate).slice(0, 10) : '');
+                  setEditEnd(cur.endDate ? String(cur.endDate).slice(0, 10) : '');
+                  setEditAssigneeId(cur.level === 1 ? null : (cur.assigneeUserId ?? null));
+                  setOpenEdit(true);
+                }}
+              >
+                編集
+              </Button>
+              <Button
+                size="small"
+                variant="outlined"
+                color="error"
+                disabled={!selectedTaskId}
+                onClick={() => setOpenDelete1(true)}
+              >
+                削除
+              </Button>
+            </Box>
+            <Typography variant="caption" color="text.secondary">
+              {selectedTaskId ? '選択中: タスクID ' + selectedTaskId : 'クリックで選択 / もう一度で解除'}
+            </Typography>
+          </Box>
+          <Box sx={{ flex: 1, minHeight: 0 }} className={styles.scrollX}>
+            <Gantt
+              tasks={visualTasks as any}
+              viewMode={viewMode}
+              locale="ja-JP"
+              listCellWidth={"740px"}
+              columnWidth={viewMode === ViewMode.Day ? 64 : 48}
+              rowHeight={40}
+              onDateChange={(task: any) => {
+                if (!task || task.id === 'virtual-root') return;
+                const start = task.start instanceof Date ? task.start.toISOString().slice(0, 10) : undefined;
+                const end = task.end instanceof Date ? task.end.toISOString().slice(0, 10) : undefined;
+                setPendingDates(prev => ({ ...prev, [String(task.id)]: { startDate: start, endDate: end } }));
+              }}
+              onDoubleClick={(task: any) => {
+                if (!task || task.id === 'virtual-root') return;
+                setSelectedTaskId(task.id);
+                const cur = items.find(t => t.id === task.id);
+                if (!cur) return;
+                setEditTitle(cur.title);
+                setEditStart(cur.startDate ? String(cur.startDate).slice(0, 10) : '');
+                setEditEnd(cur.endDate ? String(cur.endDate).slice(0, 10) : '');
+                setEditAssigneeId(cur.level === 1 ? null : (cur.assigneeUserId ?? null));
+                setEditProgress(typeof cur.progress === 'number' ? cur.progress : 0);
+                setOpenEdit(true);
+              }}
+              onSelect={(task: any, isSelected: boolean) => {
+                if (task?.id === 'virtual-root') {
+                  setSelectedTaskId(null);
+                  return;
+                }
+                setSelectedTaskId(isSelected ? task.id : null);
+              }}
+              TaskListHeader={({ headerHeight }: any) => (
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '60px 80px 320px 120px 120px 40px',
+                    alignItems: 'center',
+                    padding: '0 8px',
+                    height: headerHeight,
+                    boxSizing: 'border-box',
+                    fontWeight: 600,
+                    borderBottom: '1px solid #e0e0e0',
+                    background: '#fafafa',
+                  }}
+                >
+                  <div style={{ borderRight: '1px solid #eee', paddingRight: 8 }}>No</div>
+                  <div style={{ borderRight: '1px solid #eee', paddingRight: 8 }}>担当</div>
+                  <div style={{ borderRight: '1px solid #eee', paddingRight: 8 }}>タスクの説明</div>
+                  <div style={{ borderRight: '1px solid #eee', paddingRight: 8 }}>開始日</div>
+                  <div style={{ borderRight: '1px solid #eee', paddingRight: 8 }}>終了日</div>
+                  <div>進捗</div>
+                </div>
+              )}
+              TaskListTable={({ tasks, rowHeight }: any) => (
+                <div>
+                  {tasks.map((t: any, idx: number) => {
+                    const appItem = items.find(it => it.id === t.id);
+                    const assignee = appItem && appItem.assigneeUserId
+                      ? participants.find(p => p.assigneeUserId === appItem.assigneeUserId || p.userId === appItem.assigneeUserId)
+                      : null;
+                    const isSel = selectedTaskId === t.id;
+                    return (
+                      <div
+                        key={t.id ?? idx}
+                        onClick={() => {
+                          if (t.id !== 'virtual-root') setSelectedTaskId(prev => (prev === t.id ? null : t.id));
+                        }}
+                        onDoubleClick={() => {
+                          if (t.id === 'virtual-root') return;
+                          setSelectedTaskId(String(t.id));
+                          const cur = items.find(x => x.id === t.id);
+                          if (!cur) return;
+                          setEditTitle(cur.title);
+                          setEditStart(cur.startDate ? String(cur.startDate).slice(0, 10) : '');
+                          setEditEnd(cur.endDate ? String(cur.endDate).slice(0, 10) : '');
+                          setEditAssigneeId(cur.level === 1 ? null : (cur.assigneeUserId ?? null));
+                          setEditProgress(typeof cur.progress === 'number' ? cur.progress : 0);
+                          setOpenEdit(true);
+                        }}
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '60px 80px 320px 120px 120px 40px',
+                          alignItems: 'center',
+                          padding: '0 8px',
+                          height: rowHeight,
+                          boxSizing: 'border-box',
+                          background: isSel ? '#e3f2fd' : undefined,
+                          cursor: t.id !== 'virtual-root' ? 'pointer' : 'default',
+                          borderBottom: '1px solid #e0e0e0',
+                        }}
+                      >
+                        <div style={{ borderRight: '1px solid #eee', paddingRight: 8, textAlign: 'left', fontWeight: appItem?.level === 1 ? 600 as any : 400 }}>
+                          {appItem?.numberPath ? displayTaskNumber(appItem.numberPath) : ''}
+                        </div>
+                        <div title={assignee?.displayName || assignee?.name || ''} style={{ borderRight: '1px solid #eee', paddingRight: 8, fontWeight: appItem?.level === 1 ? 600 as any : 400 }}>
+                          {assignee?.displayName || assignee?.name || ''}
+                        </div>
+                        <div style={{ borderRight: '1px solid #eee', paddingRight: 8, fontWeight: appItem?.level === 1 ? 600 as any : 400, textAlign: 'left' }}>
+                          {t.name}
+                        </div>
+                        <div style={{ borderRight: '1px solid #eee', paddingRight: 8, fontWeight: appItem?.level === 1 ? 600 as any : 400 }}>{t.start?.toLocaleDateString?.() ?? ''}</div>
+                        <div style={{ borderRight: '1px solid #eee', paddingRight: 8, fontWeight: appItem?.level === 1 ? 600 as any : 400 }}>{t.end?.toLocaleDateString?.() ?? ''}</div>
+                        <div style={{ fontWeight: appItem?.level === 1 ? 600 as any : 400 }}>{typeof t.progress === 'number' ? `${t.progress}%` : ''}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            />
+            {Object.keys(pendingDates).length > 0 && (
+              <Box display="flex" justifyContent="flex-end" mt={1}>
+                <Button size="small" variant="contained" onClick={async () => {
+                  const entries = Object.entries(pendingDates);
+                  for (const [id, patch] of entries) {
+                    await update(id, { startDate: patch.startDate ?? null, endDate: patch.endDate ?? null });
+                  }
+                  setPendingDates({});
+                }}>変更を反映</Button>
+              </Box>
+            )}
+          </Box>
+        </Box>
+      )}
 
       <Dialog open={openNew} onClose={() => setOpenNew(false)}>
         <DialogTitle>最初のタスクを作成</DialogTitle>

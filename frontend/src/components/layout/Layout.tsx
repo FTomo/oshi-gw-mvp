@@ -18,7 +18,7 @@ export default function Layout({ children, onSignOut }: { children: React.ReactN
       <Header onMenuToggle={() => setOpen(true)} onSignOut={onSignOut} />
       <Toolbar />
       <Box component="main" sx={{ flex: 1, display: 'flex', gap: 2, px: { xs: 2, md: 3 }, py: 2 }}>
-        <Container maxWidth="lg" sx={{ display: 'flex', gap: 2 }}>
+  <Container maxWidth="lg" sx={{ display: 'block' }}>
           <Box flex={1}>{children}</Box>
           {/* 右サイド（md以上は常時表示、xs/smはドロワー） */}
           {isUpMd && (
