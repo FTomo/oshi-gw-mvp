@@ -5,6 +5,7 @@ import { type ProjectParticipant, generateAssigneeId } from '../services/project
 import { useUser } from '../hooks/useUser';
 import { userService } from '../services/userService';
 import { useNavigate } from 'react-router-dom';
+import { projectService } from '../services/projectService';
 
 export default function ProjectList() {
 	const { me } = useUser();
@@ -15,6 +16,21 @@ export default function ProjectList() {
 	const [newDesc, setNewDesc] = useState('');
 	const [editTargetId, setEditTargetId] = useState<string | null>(null);
 	const [participants, setParticipants] = useState<ProjectParticipant[]>([]);
+	// 削除ダイアログ用 state
+	const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string; ownerName: string; isOwner: boolean } | null>(null);
+	const [confirmOwnerStep, setConfirmOwnerStep] = useState(false);
+	const [confirmName, setConfirmName] = useState('');
+	const [isAdmin, setIsAdmin] = useState(false);
+
+	useEffect(() => {
+		let mounted = true;
+		(async () => {
+			if (!me?.sub) { if (mounted) setIsAdmin(false); return; }
+			const u = await userService.getById(me.sub);
+			if (mounted) setIsAdmin((u?.role ?? '') === 'admin');
+		})();
+		return () => { mounted = false };
+	}, [me?.sub]);
 
 	useEffect(() => { void list(); }, [list]);
 
@@ -97,6 +113,43 @@ export default function ProjectList() {
 		setEditTargetId(null);
 	};
 
+	const openDeleteFlow = async (p: any) => {
+		let ownerName = '不明ユーザー';
+		const isOwner = !!me?.sub && p.managerUserId === me.sub;
+		if (isOwner) {
+			ownerName = me?.name || me?.email || '自分';
+		} else if (p.managerUserId) {
+			try {
+				const u = await userService.getById(p.managerUserId);
+				ownerName = u?.name || u?.email || p.managerUserId;
+			} catch { /* ignore */ }
+		}
+		setDeleteTarget({ id: p.id, name: p.name, ownerName, isOwner });
+		setConfirmOwnerStep(isAdmin && !isOwner); // 管理者が他人の作成物を削除する時のみ第1段
+		setConfirmName('');
+	};
+
+	const canDeleteProject = (p: any) => {
+		const isOwner = !!me?.sub && p.managerUserId === me.sub;
+		return isOwner || isAdmin;
+	};
+
+	const performDelete = async () => {
+		if (!deleteTarget) return;
+		// プロジェクト名完全一致が必要
+		if (confirmName !== deleteTarget.name) return;
+		// 実際の削除
+		const ok = await projectService.remove(deleteTarget.id);
+		if (ok) {
+			// ローカル一覧から除外
+			// 直接 setItems は useProject 内部 state のため使えないので、list を再取得
+			await list();
+		}
+		setDeleteTarget(null);
+		setConfirmOwnerStep(false);
+		setConfirmName('');
+	};
+
 	return (
 		<Box>
 			<Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
@@ -122,6 +175,9 @@ export default function ProjectList() {
 												<Box display="flex" gap={1} alignItems="center">
 													<Chip size="small" label="作成者" color="primary" variant="outlined" />
 													<Button size="small" variant="outlined" onClick={(e) => { e.stopPropagation(); openParticipantDialog(p.id, p.participantsJson); }}>担当者</Button>
+													{canDeleteProject(p) && (
+														<Button size="small" color="error" onClick={(e) => { e.stopPropagation(); openDeleteFlow(p); }}>削除</Button>
+													)}
 												</Box>
 											</Box>
 										</CardContent>
@@ -148,6 +204,9 @@ export default function ProjectList() {
 												<Box display="flex" gap={1} alignItems="center">
 													<Chip size="small" label="担当者" color="default" variant="outlined" />
 													<Button size="small" variant="outlined" onClick={(e) => { e.stopPropagation(); openParticipantDialog(p.id, p.participantsJson); }}>担当者</Button>
+													{canDeleteProject(p) && (
+														<Button size="small" color="error" onClick={(e) => { e.stopPropagation(); openDeleteFlow(p); }}>削除</Button>
+													)}
 												</Box>
 											</Box>
 										</CardContent>
@@ -216,7 +275,42 @@ export default function ProjectList() {
 					<Button onClick={submitParticipants} variant="contained">保存</Button>
 				</DialogActions>
 			</Dialog>
+		{/* 削除確認 第1段（管理者が他人作成物を消す時） */}
+		<Dialog open={!!deleteTarget && confirmOwnerStep} onClose={() => { setConfirmOwnerStep(false); setDeleteTarget(null); }}>
+			<DialogTitle>確認</DialogTitle>
+			<DialogContent>
+				{deleteTarget && (
+					<Typography>
+						{deleteTarget.ownerName} さんが作成したプロジェクトです。本当に削除しますか？
+					</Typography>
+				)}
+			</DialogContent>
+			<DialogActions>
+				<Button onClick={() => { setConfirmOwnerStep(false); setDeleteTarget(null); }}>キャンセル</Button>
+				<Button color="error" variant="contained" onClick={() => setConfirmOwnerStep(false)}>続行</Button>
+			</DialogActions>
+		</Dialog>
+
+		{/* 削除確認 第2段（名前入力必須） */}
+		<Dialog open={!!deleteTarget && !confirmOwnerStep} onClose={() => { setDeleteTarget(null); setConfirmName(''); }} maxWidth="xs" fullWidth>
+			<DialogTitle>プロジェクトの削除</DialogTitle>
+			<DialogContent>
+				{deleteTarget && (
+					<Stack spacing={2} mt={1}>
+						<Typography>この操作は取り消せません。続行するには、プロジェクト名を入力してください。</Typography>
+						<TextField label="プロジェクト名" value={confirmName} onChange={(e) => setConfirmName(e.target.value)} fullWidth />
+					</Stack>
+				)}
+			</DialogContent>
+			<DialogActions>
+				<Button onClick={() => { setDeleteTarget(null); setConfirmName(''); }}>キャンセル</Button>
+				<Button color="error" variant="contained" disabled={!deleteTarget || confirmName !== deleteTarget.name} onClick={performDelete}>削除</Button>
+			</DialogActions>
+		</Dialog>
+
 		</Box>
 	);
 }
+
+// 削除確認ダイアログ（段階式）はコンポーネント末尾に設置（JSXのトップではなく return 内に入れても良いが簡略化）
 

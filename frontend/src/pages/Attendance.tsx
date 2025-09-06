@@ -191,12 +191,22 @@ export default function AttendancePage() {
         <Card>
           <CardContent>
             <Typography variant="h6">打刻 (本日 {today})</Typography>
-            <Box display="flex" gap={1} mt={1}>
-              <Button variant="contained" onClick={handlePunchIn} disabled={!me || !!currentTodayRec?.clockIn}>出勤</Button>
-              <Button variant="outlined" onClick={handlePunchOut} disabled={!me || !currentTodayRec?.clockIn || !!currentTodayRec?.clockOut}>退勤</Button>
+            <Box display="flex" gap={2} mt={1.5} justifyContent="center">
+              <Button
+                variant="contained"
+                onClick={handlePunchIn}
+                disabled={!me || !!currentTodayRec?.clockIn}
+                sx={{ px: 4, py: 2, fontSize: '1.1rem', minWidth: 140 }}
+              >出勤</Button>
+              <Button
+                variant="outlined"
+                onClick={handlePunchOut}
+                disabled={!me || !currentTodayRec?.clockIn || !!currentTodayRec?.clockOut}
+                sx={{ px: 4, py: 2, fontSize: '1.1rem', minWidth: 140 }}
+              >退勤</Button>
             </Box>
             {currentTodayRec && (
-              <Typography variant="body2" color="text.secondary" mt={1}>
+              <Typography variant="body1" color="text.secondary" mt={1} textAlign="center" sx={{ fontSize: 16 }}>
                 {currentTodayRec.clockIn ? `出勤: ${currentTodayRec.clockIn.slice(0,5)}` : '未出勤'} / {currentTodayRec.clockOut ? `退勤: ${currentTodayRec.clockOut.slice(0,5)}` : '未退勤'} {currentTodayRec.plannedOff ? '(休予定日)' : ''}
               </Typography>
             )}
@@ -234,8 +244,8 @@ export default function AttendancePage() {
         <Card>
           <CardContent>
             <Typography variant="subtitle1" gutterBottom>操作メモ</Typography>
-            <Typography variant="body2" color="text.secondary" component="div">
-              <ul style={{ margin: 0, paddingLeft: '1.2rem' }}>
+            <Typography variant="body2" color="text.secondary" component="div" sx={{ textAlign: 'left' }}>
+              <ul style={{ margin: 0, paddingLeft: '1.2rem', textAlign: 'left' }}>
                 <li>カレンダー日付クリックで右側編集</li>
                 <li>出勤/退勤は当日のみボタン操作</li>
                 <li>休予定スイッチは日単位で切替</li>

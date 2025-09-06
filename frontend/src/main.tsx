@@ -37,6 +37,7 @@ import { Amplify } from 'aws-amplify'
 import outputs from './amplifyconfiguration.json'
 import App from './App'
 import { theme } from './theme'
+import './responsive.css'
 
 Amplify.configure(outputs) // ← これが重要！
 

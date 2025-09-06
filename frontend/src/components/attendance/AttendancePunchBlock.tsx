@@ -30,11 +30,21 @@ export function AttendancePunchBlock() {
     <Card>
       <CardContent>
         <Typography variant="subtitle1">今日の勤怠</Typography>
-        <Box mt={1} display="flex" gap={1}>
-          <Button size="small" variant="contained" onClick={handleIn} disabled={!me || !!rec?.clockIn}>出勤</Button>
-          <Button size="small" variant="outlined" onClick={handleOut} disabled={!me || !rec?.clockIn || !!rec?.clockOut}>退勤</Button>
+        <Box mt={1.5} display="flex" gap={2} justifyContent="center">
+          <Button
+            variant="contained"
+            onClick={handleIn}
+            disabled={!me || !!rec?.clockIn}
+            sx={{ px: 4, py: 2, fontSize: '1.1rem', minWidth: 140 }}
+          >出勤</Button>
+          <Button
+            variant="outlined"
+            onClick={handleOut}
+            disabled={!me || !rec?.clockIn || !!rec?.clockOut}
+            sx={{ px: 4, py: 2, fontSize: '1.1rem', minWidth: 140 }}
+          >退勤</Button>
         </Box>
-        <Typography variant="caption" color="text.secondary" display="block" mt={1}>
+        <Typography variant="body1" color="text.secondary" display="block" mt={1} textAlign="center" sx={{ fontSize: 16 }}>
           {rec ? `${rec.clockIn ? '出勤 '+rec.clockIn.slice(0,5) : '未出勤'} / ${rec.clockOut ? '退勤 '+rec.clockOut.slice(0,5) : '未退勤'} ${rec.plannedOff ? '(休予定)' : ''}` : 'まだ打刻なし'}
         </Typography>
       </CardContent>

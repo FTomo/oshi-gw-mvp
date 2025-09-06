@@ -1,13 +1,22 @@
 import { AppBar, Toolbar, IconButton, Typography, Box, Avatar, Button } from '@mui/material'
 import MenuIcon from '@mui/icons-material/Menu'
+import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import { useRecoilValue } from 'recoil'
 import { currentUserAtom } from '../../state/auth'
+import { useLocation } from 'react-router-dom'
 
 export function Header({ onMenuToggle, onSignOut }: { onMenuToggle: () => void; onSignOut?: () => void }) {
   const user = useRecoilValue(currentUserAtom)
+  const location = useLocation()
+  const showBack = location.pathname !== '/'
   return (
     <AppBar position="fixed" elevation={1} color="default" sx={{ borderBottom: 1, borderColor: 'divider' }}>
       <Toolbar>
+        {showBack && (
+          <IconButton edge="start" onClick={() => window.history.back()} sx={{ mr: 1 }} aria-label="back">
+            <ArrowBackIcon />
+          </IconButton>
+        )}
         <Typography variant="h6" sx={{ flexGrow: 1 }}>
           社内グループウェア
         </Typography>
