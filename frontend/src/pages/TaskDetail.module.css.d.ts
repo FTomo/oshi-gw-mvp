@@ -4,5 +4,6 @@ declare const styles: {
   readonly toolbarB: string;
   readonly scrollX: string;
   readonly fullScreenOverlay: string;
+  readonly reorderControl: string;
 };
 export = styles;

@@ -7,6 +7,8 @@ export type ProjectParticipant = {
 	assigneeUserId: string;
 	// システム内 User テーブルの id（Cognito sub）。社内ユーザーに対応するときのみ設定
 	userId?: string | null;
+	// 新仕様: 参加者のメールアドレス（Userテーブル照合用）。保存時もJSONに保持する
+	email?: string | null;
 	name: string;           // 本名など
 	displayName: string;    // タスク内表示名
 	canEdit?: boolean;      // 編集権限（UI用）
@@ -100,7 +102,7 @@ export const projectService = {
 
 	// participantsJson を編集し、編集/閲覧権限の userId 配列も同期更新
 	async saveParticipants(projectId: string, participants: ProjectParticipant[]): Promise<DbProject | null> {
-		// assigneeUserId を必須化（不足している場合は付与）
+		// assigneeUserId を必須化（不足している場合は付与）。email はそのまま保持。
 		const withIds = participants.map(p => ({
 			...p,
 			assigneeUserId: p.assigneeUserId && p.assigneeUserId.length > 0 ? p.assigneeUserId : generateAssigneeId(),

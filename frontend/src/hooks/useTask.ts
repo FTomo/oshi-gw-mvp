@@ -41,6 +41,36 @@ export function useTask(projectId?: string) {
 		return ok;
 	}, []);
 
+	// 並び替え: 選択タスクを上下移動（ルート同士／同一ルート配下の子同士）
+	const move = useCallback(async (targetId: string, dir: 'up' | 'down') => {
+		const all = [...items];
+		const target = all.find(t => t.id === targetId);
+		if (!target) return null;
+		const isRoot = !target.parentTaskId;
+		if (isRoot) {
+			// ルート同士のみ
+			const roots = all.filter(t => !t.parentTaskId).sort((a, b) => a.sequence - b.sequence);
+			const idx = roots.findIndex(t => t.id === targetId);
+			if ((dir === 'up' && idx === 0) || (dir === 'down' && idx === roots.length - 1)) return items;
+		} else {
+			// 同一ルート配下のみ
+			const root = (() => {
+				let p: DbTask | undefined = target;
+				while (p && p.parentTaskId) p = all.find(t => t.id === p!.parentTaskId);
+				return p;
+			})();
+			if (!root) return items;
+			const siblingsUnderRoot = all.filter(t => t.numberPath.startsWith(root.numberPath + '.') && t.level === target.level && t.parentTaskId === target.parentTaskId)
+				.sort((a, b) => a.sequence - b.sequence);
+			const idx = siblingsUnderRoot.findIndex(t => t.id === targetId);
+			if ((dir === 'up' && idx === 0) || (dir === 'down' && idx === siblingsUnderRoot.length - 1)) return items;
+		}
+
+		const updated = await taskService.reorderWithinProject(all, targetId, dir);
+		if (updated) setItems(updated);
+		return updated;
+	}, [items]);
+
 	// gantt-task-react 用に整形（No順＝numberPath昇順、NameはNoを付加しない）
 	const ganttTasks = useMemo(() => {
 		const sorted = [...items].sort((a, b) => a.numberPath.localeCompare(b.numberPath));
@@ -56,6 +86,6 @@ export function useTask(projectId?: string) {
 		}));
 	}, [items]);
 
-	return { items, loading, loadByProject, createRoot, createChild, update, remove, ganttTasks };
+	return { items, loading, loadByProject, createRoot, createChild, update, remove, move, ganttTasks };
 }
 

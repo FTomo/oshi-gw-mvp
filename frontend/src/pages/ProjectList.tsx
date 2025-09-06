@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Box, Button, Card, CardActionArea, CardContent, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField, Typography } from '@mui/material';
+import { Box, Button, Card, CardActionArea, CardContent, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField, Typography } from '@mui/material';
 import { useProject } from '../hooks/useProject';
 import { type ProjectParticipant, generateAssigneeId } from '../services/projectService';
 import { useUser } from '../hooks/useUser';
+import { userService } from '../services/userService';
 import { useNavigate } from 'react-router-dom';
 
 export default function ProjectList() {
@@ -17,12 +18,35 @@ export default function ProjectList() {
 
 	useEffect(() => { void list(); }, [list]);
 
+	const isParticipant = (p: any) => {
+		if (!me?.sub) return false;
+		// participantsJson に自分が含まれるか
+		try {
+			const raw: any[] = p.participantsJson ? JSON.parse(p.participantsJson) : [];
+			if (Array.isArray(raw)) {
+				if (raw.some((x: any) => x?.userId === me.sub || x?.assigneeUserId === me.sub)) return true;
+			}
+		} catch { /* ignore */ }
+		// editable/readable に自分が含まれるか
+		try {
+			const edit: string[] = JSON.parse(p.editableUserIdsJson ?? '[]');
+			const read: string[] = JSON.parse(p.readableUserIdsJson ?? '[]');
+			if (Array.isArray(edit) && edit.includes(me.sub)) return true;
+			if (Array.isArray(read) && read.includes(me.sub)) return true;
+		} catch { /* ignore */ }
+		return false;
+	};
+
+	const createdByMe = me ? items.filter(p => p.managerUserId === me.sub) : items;
+	const participating = me ? items.filter(p => p.managerUserId !== me.sub && isParticipant(p)) : [];
+
 	const openParticipantDialog = (pid: string, currentJson?: string | null) => {
 		setEditTargetId(pid);
 			const raw: any[] = currentJson ? JSON.parse(currentJson) : [];
-			const arr: ProjectParticipant[] = (Array.isArray(raw) ? raw : []).map((p: any) => ({
+						const arr: ProjectParticipant[] = (Array.isArray(raw) ? raw : []).map((p: any) => ({
 				assigneeUserId: p.assigneeUserId ?? generateAssigneeId(),
-				userId: p.userId ?? p.id ?? null,
+							userId: p.userId ?? p.id ?? null,
+							email: p.email ?? null,
 				name: p.name ?? '',
 				displayName: p.displayName ?? p.name ?? '',
 				canEdit: !!p.canEdit,
@@ -32,7 +56,7 @@ export default function ProjectList() {
 	};
 
 		const addParticipant = () => setParticipants(p => [...p, { assigneeUserId: generateAssigneeId(), name: '', displayName: '' } as ProjectParticipant]);
-	const updateParticipant = (i: number, field: keyof ProjectParticipant, val: string | boolean) =>
+		const updateParticipant = (i: number, field: keyof ProjectParticipant, val: string | boolean) =>
 		setParticipants(prev => prev.map((p, idx) => (idx === i ? { ...p, [field]: val } : p)));
 	const removeParticipant = (i: number) => setParticipants(prev => prev.filter((_, idx) => idx !== i));
 
@@ -53,7 +77,23 @@ export default function ProjectList() {
 
 	const submitParticipants = async () => {
 		if (!editTargetId) return;
-		await saveParticipants(editTargetId, participants);
+			// メールアドレスからユーザーを解決（存在すれば userId に反映）
+			const resolved = await (async () => {
+				try {
+					const { items: users } = await userService.list(200);
+					const byEmail = new Map(users.map(u => [u.email?.toLowerCase?.() ?? '', u]));
+					return participants.map(p => {
+						if (p.email && !p.userId) {
+							const u = byEmail.get(p.email.toLowerCase());
+							if (u) return { ...p, userId: u.id, name: p.name || u.name || '', displayName: p.displayName || u.name || '' } as ProjectParticipant;
+						}
+						return p;
+					});
+				} catch {
+					return participants;
+				}
+			})();
+			await saveParticipants(editTargetId, resolved);
 		setEditTargetId(null);
 	};
 
@@ -63,25 +103,82 @@ export default function ProjectList() {
 				<Typography variant="h5">プロジェクト一覧</Typography>
 				<Button variant="contained" onClick={() => setOpenNew(true)}>新規作成</Button>
 			</Box>
-			<Stack spacing={2}>
-						{items.map(p => (
-							<Card key={p.id}>
-								<CardActionArea onClick={() => nav(`/projects/${p.id}`)}>
-									<CardContent>
-										<Box display="flex" justifyContent="space-between" alignItems="center">
-											<Box>
-												<Typography variant="subtitle1">{p.name}</Typography>
-												<Typography variant="caption" color="text.secondary">{p.description || ''}</Typography>
+			{me ? (
+				<Stack spacing={3}>
+					<Box>
+						<Typography variant="subtitle2" gutterBottom>自分が作成</Typography>
+						<Stack spacing={2}>
+							{createdByMe.length === 0 ? (
+								<Typography variant="body2" color="text.secondary">該当なし</Typography>
+							) : createdByMe.map(p => (
+								<Card key={p.id}>
+									<CardActionArea onClick={() => nav(`/projects/${p.id}`)}>
+										<CardContent>
+											<Box display="flex" justifyContent="space-between" alignItems="center">
+												<Box>
+													<Typography variant="subtitle1">{p.name}</Typography>
+													<Typography variant="caption" color="text.secondary">{p.description || ''}</Typography>
+												</Box>
+												<Box display="flex" gap={1} alignItems="center">
+													<Chip size="small" label="作成者" color="primary" variant="outlined" />
+													<Button size="small" variant="outlined" onClick={(e) => { e.stopPropagation(); openParticipantDialog(p.id, p.participantsJson); }}>担当者</Button>
+												</Box>
 											</Box>
-											<Box display="flex" gap={1}>
-												<Button size="small" variant="outlined" onClick={(e) => { e.stopPropagation(); openParticipantDialog(p.id, p.participantsJson); }}>担当者</Button>
+										</CardContent>
+									</CardActionArea>
+								</Card>
+							))}
+						</Stack>
+					</Box>
+
+					<Box>
+						<Typography variant="subtitle2" gutterBottom>担当者として参加</Typography>
+						<Stack spacing={2}>
+							{participating.length === 0 ? (
+								<Typography variant="body2" color="text.secondary">該当なし</Typography>
+							) : participating.map(p => (
+								<Card key={p.id}>
+									<CardActionArea onClick={() => nav(`/projects/${p.id}`)}>
+										<CardContent>
+											<Box display="flex" justifyContent="space-between" alignItems="center">
+												<Box>
+													<Typography variant="subtitle1">{p.name}</Typography>
+													<Typography variant="caption" color="text.secondary">{p.description || ''}</Typography>
+												</Box>
+												<Box display="flex" gap={1} alignItems="center">
+													<Chip size="small" label="担当者" color="default" variant="outlined" />
+													<Button size="small" variant="outlined" onClick={(e) => { e.stopPropagation(); openParticipantDialog(p.id, p.participantsJson); }}>担当者</Button>
+												</Box>
 											</Box>
+										</CardContent>
+									</CardActionArea>
+								</Card>
+							))}
+						</Stack>
+					</Box>
+				</Stack>
+			) : (
+				// me がまだ同期されていない場合は従来通りまとめて表示
+				<Stack spacing={2}>
+					{items.map(p => (
+						<Card key={p.id}>
+							<CardActionArea onClick={() => nav(`/projects/${p.id}`)}>
+								<CardContent>
+									<Box display="flex" justifyContent="space-between" alignItems="center">
+										<Box>
+											<Typography variant="subtitle1">{p.name}</Typography>
+											<Typography variant="caption" color="text.secondary">{p.description || ''}</Typography>
 										</Box>
-									</CardContent>
-								</CardActionArea>
-							</Card>
-						))}
-			</Stack>
+										<Box display="flex" gap={1}>
+											<Button size="small" variant="outlined" onClick={(e) => { e.stopPropagation(); openParticipantDialog(p.id, p.participantsJson); }}>担当者</Button>
+										</Box>
+									</Box>
+								</CardContent>
+							</CardActionArea>
+						</Card>
+					))}
+				</Stack>
+			)}
 
 			<Dialog open={openNew} onClose={() => setOpenNew(false)} maxWidth="sm" fullWidth>
 				<DialogTitle>新規プロジェクト</DialogTitle>
@@ -98,13 +195,13 @@ export default function ProjectList() {
 			</Dialog>
 
 			<Dialog open={!!editTargetId} onClose={() => setEditTargetId(null)} maxWidth="md" fullWidth>
-				<DialogTitle>担当者リスト編集</DialogTitle>
+						<DialogTitle>担当者リスト編集</DialogTitle>
 				<DialogContent>
-					<Button size="small" onClick={addParticipant}>担当者を追加</Button>
+							<Button size="small" onClick={addParticipant}>担当者を追加</Button>
 					<Stack spacing={1} mt={1}>
 						{participants.map((pt, i) => (
-							<Box key={i} display="grid" gridTemplateColumns="1fr 1fr 1fr 80px 80px 80px" gap={1} alignItems="center">
-								<TextField label="ユーザーID(任意)" value={pt.userId ?? ''} onChange={e => updateParticipant(i, 'userId', e.target.value)} size="small" />
+									<Box key={i} display="grid" gridTemplateColumns="1.2fr 1fr 1fr 80px 80px 80px" gap={1} alignItems="center">
+										<TextField label="メールアドレス" value={pt.email ?? ''} onChange={e => updateParticipant(i, 'email', e.target.value)} size="small" placeholder="user@example.com" />
 								<TextField label="氏名" value={pt.name} onChange={e => updateParticipant(i, 'name', e.target.value)} size="small" />
 								<TextField label="表示名" value={pt.displayName} onChange={e => updateParticipant(i, 'displayName', e.target.value)} size="small" />
 								<Button size="small" variant={pt.canEdit ? 'contained' : 'outlined'} onClick={() => updateParticipant(i, 'canEdit', !pt.canEdit)}>編集可</Button>

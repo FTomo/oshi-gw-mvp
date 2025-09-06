@@ -170,5 +170,70 @@ export const taskService = {
 			return false;
 		}
 	},
+
+	// 順序用: sequence/numberPath を更新するための低レベルAPI
+	async updateOrderFields(id: string, fields: Partial<Pick<DbTask, 'sequence' | 'numberPath'>>) {
+		try {
+			const res = await client.graphql({ query: updateTask, variables: { input: { id, ...fields } }, authMode: 'userPool' }) as unknown as { data?: APITypes.UpdateTaskMutation };
+			const t = res.data?.updateTask;
+			return t ? mapApiTask(t) : null;
+		} catch (e) {
+			console.error('task.updateOrderFields error', e);
+			return null;
+		}
+	},
+
+	// 同一親（親なし=ルート同士）内で上下入れ替え。必要なレコードの sequence/numberPath を順次更新。
+		async reorderWithinProject(all: DbTask[], targetId: string, dir: 'up' | 'down'): Promise<DbTask[] | null> {
+			const target = all.find(t => t.id === targetId);
+		if (!target) return null;
+		const isRoot = !target.parentTaskId;
+		const siblings = all.filter(t => (isRoot ? !t.parentTaskId : t.parentTaskId === target.parentTaskId)).sort((a, b) => a.sequence - b.sequence);
+		const idx = siblings.findIndex(t => t.id === targetId);
+		if (idx < 0) return null;
+		if ((dir === 'up' && idx === 0) || (dir === 'down' && idx === siblings.length - 1)) return all; // 端
+
+		// スワップ後に連番振り直し
+		const swapIdx = dir === 'up' ? idx - 1 : idx + 1;
+		const newOrder = [...siblings];
+		[newOrder[idx], newOrder[swapIdx]] = [newOrder[swapIdx], newOrder[idx]];
+		const parentNumberPath = isRoot ? '' : (all.find(t => t.id === target.parentTaskId)?.numberPath ?? '');
+
+		// 旧→新のプレフィックス表
+		const prefixMap: Array<{ oldPrefix: string; newPrefix: string; id: string; newSeq: number }> = [];
+		newOrder.forEach((s, i) => {
+			const newSeq = i + 1;
+			const newPrefix = (isRoot ? '' : parentNumberPath + '.') + pad(newSeq);
+			prefixMap.push({ oldPrefix: s.numberPath, newPrefix, id: s.id, newSeq });
+		});
+
+		// ローカル配列を更新
+		const updatedAll = all.map(t => {
+			// 該当兄弟なら sequence と numberPath を更新
+			const map = prefixMap.find(m => m.id === t.id);
+			if (map) {
+				return { ...t, sequence: map.newSeq, numberPath: map.newPrefix };
+			}
+			// 子孫なら prefix 置換
+			const hit = prefixMap.find(m => t.numberPath.startsWith(m.oldPrefix + '.'));
+			if (hit) {
+				const rest = t.numberPath.slice(hit.oldPrefix.length);
+				return { ...t, numberPath: hit.newPrefix + rest };
+			}
+			return t;
+		});
+
+		// 永続化（兄弟＋子孫の numberPath、兄弟の sequence）
+		for (const before of all) {
+			const after = updatedAll.find(t => t.id === before.id)!;
+			if (!after) continue;
+			const needOrderUpdate = before.numberPath !== after.numberPath || before.sequence !== after.sequence;
+			if (needOrderUpdate) {
+				await this.updateOrderFields(after.id, { sequence: after.sequence, numberPath: after.numberPath });
+			}
+		}
+
+		return updatedAll;
+	},
 };
 
