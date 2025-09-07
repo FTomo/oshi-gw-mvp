@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import FullCalendarOrig from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
@@ -24,6 +24,7 @@ interface UnifiedCalendarProps {
 
 export function UnifiedCalendar({ selectedDate, onSelectDate }: UnifiedCalendarProps) {
   const { items, loadRange } = useAttendance();
+  const calRef = useRef<any>(null);
   const [range, setRange] = useState<{from: string; to: string}>(() => {
     const now = new Date();
     const from = fmt(new Date(now.getFullYear(), now.getMonth(), 1));
@@ -45,6 +46,8 @@ export function UnifiedCalendar({ selectedDate, onSelectDate }: UnifiedCalendarP
     return { id: r.id, start: r.date, title, allDay: true };
   }), [items]);
 
+  const todayJst = fmt(new Date());
+
   const onDatesSet = (arg: any) => {
     const from = fmt(arg.start);
     const to = fmt(new Date(arg.end.getTime() - 86400000));
@@ -59,16 +62,29 @@ export function UnifiedCalendar({ selectedDate, onSelectDate }: UnifiedCalendarP
     if (isJstWeekend(arg.date)) classes.push('fc-weekend');
     if (holidays.includes(dateStr)) classes.push('fc-holiday');
     if (selectedDate && dateStr === selectedDate) classes.push('fc-selected-day');
+    if (dateStr === todayJst) classes.push('fc-today-bg');
     return classes;
   };
 
   return (
     <>
       <FullCalendar
+        ref={calRef}
         plugins={[dayGridPlugin, interactionPlugin]}
         initialView="dayGridMonth"
         locale="ja"
         height={400}
+        customButtons={{
+          todayCustom: {
+            text: '今日',
+            click: () => {
+              const api = calRef.current?.getApi?.();
+              api?.today();
+              onSelectDate?.(todayJst);
+            }
+          }
+        }}
+        headerToolbar={{ left: 'title', center: '', right: 'prev,next todayCustom' }}
         events={events as any}
         datesSet={onDatesSet as any}
         dateClick={onDateClick as any}
@@ -80,6 +96,7 @@ export function UnifiedCalendar({ selectedDate, onSelectDate }: UnifiedCalendarP
           .fc-weekend { background:#f2f2f2 !important; }
           .fc-holiday { background:#f2f2f2 !important; }
           .fc-selected-day { outline:2px solid #ff9800; }
+          .fc-today-bg { background: #fff9c4 !important; }
         `}
       </style>
     </>

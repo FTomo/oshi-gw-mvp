@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Button, Card, CardContent, CircularProgress, FormControlLabel, Switch, TextField, Typography } from '@mui/material';
 import * as XLSX from 'xlsx';
 import FullCalendarOrig from '@fullcalendar/react';
@@ -33,6 +33,7 @@ const FullCalendar: any = FullCalendarOrig;
 
 
 export default function AttendancePage() {
+  const calRef = useRef<any>(null);
   const { me } = useUser();
   const { items, loadRange, punchIn, punchOut, markPlannedOff, updateNote, loading } = useAttendance();
   const [noteEditing, setNoteEditing] = useState<string>('');
@@ -146,13 +147,15 @@ export default function AttendancePage() {
   };
 
   const holidays = getJpHolidays(new Date().getFullYear());
+  const todayJst = fmt(new Date());
 
   const dayCellClassNames = (arg: any) => {
     const dateStr = fmt(arg.date);
     const classes: string[] = [];
     if (isJstWeekend(arg.date)) classes.push('fc-weekend');
     if (holidays.includes(dateStr)) classes.push('fc-holiday');
-    if (fmt(arg.date) === selectedDate) classes.push('fc-selected-day');
+  if (fmt(arg.date) === selectedDate) classes.push('fc-selected-day');
+  if (dateStr === todayJst) classes.push('fc-today-bg');
     return classes;
   };
 
@@ -167,10 +170,22 @@ export default function AttendancePage() {
             </Box>
             {loading && <CircularProgress size={24} />}
             <FullCalendar
+              ref={calRef}
               plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
               initialView="dayGridMonth"
               locale="ja"
               height={650}
+              customButtons={{
+                todayCustom: {
+                  text: '今日',
+                  click: () => {
+                    const api = calRef.current?.getApi?.();
+                    api?.today();
+                    handleSelectDate(todayJst);
+                  }
+                }
+              }}
+              headerToolbar={{ left: 'title', center: '', right: 'prev,next todayCustom' }}
               events={events as any}
               datesSet={onDatesSet as any}
               dateClick={onDateClick as any}
@@ -181,6 +196,7 @@ export default function AttendancePage() {
               {`.fc-weekend { background:#f2f2f2 !important; }
                 .fc-holiday { background:#f2f2f2 !important; }
                 .fc-selected-day { outline:2px solid #ff9800; }
+                .fc-today-bg { background:#fff9c4 !important; }
               `}
             </style>
           </CardContent>

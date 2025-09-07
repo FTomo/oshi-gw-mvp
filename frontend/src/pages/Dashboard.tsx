@@ -90,13 +90,8 @@ export default function Dashboard() {
           </CardContent></Card>
         </Box>
         <Box flex={1}>
-          {/* 勤怠打刻ブロック + 下段右寄せボタン */}
-          <Box>
-            <AttendancePunchBlock />
-            <Box mt={1} display="flex" justifyContent="flex-end">
-              <Button size="small" variant="outlined" onClick={() => navigate('/attendance')}>勤怠管理へ</Button>
-            </Box>
-          </Box>
+          {/* 勤怠打刻ブロック（ボタン含む） */}
+          <AttendancePunchBlock />
           <Card sx={{ mt: 2 }}>
             <CardContent>
             <Typography variant="subtitle1">自分のタスク</Typography>

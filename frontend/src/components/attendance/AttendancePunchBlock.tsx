@@ -2,6 +2,7 @@ import { Box, Button, Card, CardContent, Typography } from '@mui/material';
 import { useAttendance } from '../../hooks/useAttendance';
 import { useEffect, useState } from 'react';
 import { useUser } from '../../hooks/useUser';
+import { useNavigate } from 'react-router-dom';
 
 // JST 日付関数 (hooks/useAttendance と揃える)
 const jstDate = () => new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0,10);
@@ -9,6 +10,7 @@ const jstDate = () => new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().sl
 export function AttendancePunchBlock() {
   const { punchIn, punchOut, items, loadRange } = useAttendance();
   const today = jstDate();
+  const navigate = useNavigate();
   // 初期ロード (今日のみ範囲) ※ 再利用時競合少ない極小レンジ
   useEffect(() => {
     const from = today; const to = today;
@@ -47,6 +49,9 @@ export function AttendancePunchBlock() {
         <Typography variant="body1" color="text.secondary" display="block" mt={1} textAlign="center" sx={{ fontSize: 16 }}>
           {rec ? `${rec.clockIn ? '出勤 '+rec.clockIn.slice(0,5) : '未出勤'} / ${rec.clockOut ? '退勤 '+rec.clockOut.slice(0,5) : '未退勤'} ${rec.plannedOff ? '(休予定)' : ''}` : 'まだ打刻なし'}
         </Typography>
+        <Box mt={1} display="flex" justifyContent="flex-end">
+          <Button size="small" variant="outlined" onClick={() => navigate('/attendance')}>勤怠管理へ</Button>
+        </Box>
       </CardContent>
     </Card>
   );
