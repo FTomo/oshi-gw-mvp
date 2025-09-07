@@ -1,7 +1,8 @@
 // =============================
 // src/pages/Dashboard.tsx
 // =============================
-import { Box, Card, CardContent, Typography, List, ListItemButton, ListItemText, Chip, Divider, CircularProgress, Stack } from '@mui/material'
+import { Box, Card, CardContent, Typography, List, ListItemButton, ListItemText, Chip, Divider, CircularProgress, Stack, Button, CardActions } from '@mui/material'
+import React from 'react'
 import { useUser } from '../hooks/useUser'
 import { AttendancePunchBlock } from '../components/attendance/AttendancePunchBlock'
 import { UnifiedCalendar } from '../components/calendar/UnifiedCalendar'
@@ -89,8 +90,15 @@ export default function Dashboard() {
           </CardContent></Card>
         </Box>
         <Box flex={1}>
-          <AttendancePunchBlock />
-          <Card sx={{ mt: 2 }}><CardContent>
+          {/* 勤怠打刻ブロック + 下段右寄せボタン */}
+          <Box>
+            <AttendancePunchBlock />
+            <Box mt={1} display="flex" justifyContent="flex-end">
+              <Button size="small" variant="outlined" onClick={() => navigate('/attendance')}>勤怠管理へ</Button>
+            </Box>
+          </Box>
+          <Card sx={{ mt: 2 }}>
+            <CardContent>
             <Typography variant="subtitle1">自分のタスク</Typography>
             {loadingMy && (
               <Box mt={1}><CircularProgress size={20} /></Box>
@@ -104,11 +112,11 @@ export default function Dashboard() {
                   <Box key={group.project.id}>
                     <Typography variant="subtitle2" gutterBottom>{group.project.name}</Typography>
                     <List dense>
-                      {group.tasks.map(t => {
+                      {group.tasks.map((t) => {
                         const od = overdueDays(t)
                         return (
-                          <>
-                            <ListItemButton key={t.id} onClick={() => navigate(`/projects/${group.project.id}`)}>
+                          <React.Fragment key={t.id}>
+                            <ListItemButton onClick={() => navigate(`/projects/${group.project.id}`)}>
                               <ListItemText
                                 primary={t.title}
                                 secondary={
@@ -118,7 +126,7 @@ export default function Dashboard() {
                               {od > 0 && <Chip color="error" size="small" label={`遅延 ${od}日`} />}
                             </ListItemButton>
                             <Divider component="li" />
-                          </>
+                          </React.Fragment>
                         )
                       })}
                     </List>
@@ -126,7 +134,15 @@ export default function Dashboard() {
                 ))}
               </Stack>
             )}
-          </CardContent></Card>
+            {/* 右下ボタン: プロジェクト管理へ */}
+            <Box position="absolute" right={8} bottom={8}>
+              <Button size="small" variant="outlined" onClick={() => navigate('/projects')}>プロジェクト管理へ</Button>
+            </Box>
+            </CardContent>
+            <CardActions sx={{ justifyContent: 'flex-end', pt: 0 }}>
+              <Button size="small" variant="outlined" onClick={() => navigate('/projects')}>プロジェクト管理へ</Button>
+            </CardActions>
+          </Card>
         </Box>
       </Box>
     </Box>

@@ -8,6 +8,9 @@ import Profile from './pages/Profile'
 import AttendancePage from './pages/Attendance'
 import ProjectList from './pages/ProjectList'
 import TaskDetail from './pages/TaskDetail'
+import AdminUsers from './pages/AdminUsers'
+import useAuthz from './hooks/useAuthz'
+import React from 'react'
 
 // Amplify UI（既存仕様）
 import { Authenticator } from '@aws-amplify/ui-react'
@@ -68,12 +71,19 @@ function AuthenticatedApp({
   <Route path="/attendance" element={<AttendancePage />} />
   <Route path="/projects" element={<ProjectList />} />
   <Route path="/projects/:projectId" element={<TaskDetail />} />
+  <Route path="/admin/users" element={<AdminGate><AdminUsers /></AdminGate>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
   {/* SignOut ボタンは Header メニューで表示されるため重複削除 */}
     </Layout>
   )
+}
+
+function AdminGate({ children }: { children: React.ReactElement }) {
+  const { isAdmin, loading } = useAuthz()
+  if (loading) return null
+  return isAdmin ? children : <Navigate to="/" replace />
 }
 
 export default function App() {

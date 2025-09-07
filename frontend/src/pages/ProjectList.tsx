@@ -165,7 +165,7 @@ export default function ProjectList() {
 								<Typography variant="body2" color="text.secondary">該当なし</Typography>
 							) : createdByMe.map(p => (
 								<Card key={p.id}>
-									<CardActionArea onClick={() => nav(`/projects/${p.id}`)}>
+									<CardActionArea component="div" onClick={() => nav(`/projects/${p.id}`)}>
 										<CardContent>
 											<Box display="flex" justifyContent="space-between" alignItems="center">
 												<Box>
@@ -194,7 +194,7 @@ export default function ProjectList() {
 								<Typography variant="body2" color="text.secondary">該当なし</Typography>
 							) : participating.map(p => (
 								<Card key={p.id}>
-									<CardActionArea onClick={() => nav(`/projects/${p.id}`)}>
+									<CardActionArea component="div" onClick={() => nav(`/projects/${p.id}`)}>
 										<CardContent>
 											<Box display="flex" justifyContent="space-between" alignItems="center">
 												<Box>
@@ -221,7 +221,7 @@ export default function ProjectList() {
 				<Stack spacing={2}>
 					{items.map(p => (
 						<Card key={p.id}>
-							<CardActionArea onClick={() => nav(`/projects/${p.id}`)}>
+							<CardActionArea component="div" onClick={() => nav(`/projects/${p.id}`)}>
 								<CardContent>
 									<Box display="flex" justifyContent="space-between" alignItems="center">
 										<Box>

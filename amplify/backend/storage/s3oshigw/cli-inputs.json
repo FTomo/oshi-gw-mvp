@@ -1,0 +1,14 @@
+{
+  "resourceName": "s3oshigw",
+  "policyUUID": "c9b0ac28",
+  "bucketName": "oshigwa4b43f2e1e54478db9b6aade25bfe9dd",
+  "storageAccess": "auth",
+  "guestAccess": [],
+  "authAccess": [
+    "CREATE_AND_UPDATE",
+    "READ",
+    "DELETE"
+  ],
+  "triggerFunction": "NONE",
+  "groupAccess": {}
+}

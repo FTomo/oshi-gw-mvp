@@ -2,11 +2,13 @@
 // src/components/layout/SideMenu.tsx
 // =============================
 import { Drawer, Box, List, ListItemButton, ListItemText, ListSubheader } from '@mui/material'
+import useAuthz from '../../hooks/useAuthz'
 import { useNavigate, useLocation } from 'react-router-dom'
 
 export function SideMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
   const nav = useNavigate()
   const loc = useLocation()
+  const { isAdmin } = useAuthz()
   const go = (path: string) => () => { nav(path); onClose() }
   return (
     <Drawer anchor="right" open={open} onClose={onClose} ModalProps={{ keepMounted: true }}>
@@ -19,6 +21,13 @@ export function SideMenu({ open, onClose }: { open: boolean; onClose: () => void
         <List subheader={<ListSubheader component="div">勤怠管理</ListSubheader>}>
           <ListItemButton selected={loc.pathname.startsWith('/attendance')} onClick={go('/attendance')}> <ListItemText primary="勤怠カレンダー" /> </ListItemButton>
         </List>
+  {isAdmin && (
+          <List subheader={<ListSubheader component="div">管理者メニュー</ListSubheader>}>
+            <ListItemButton selected={loc.pathname.startsWith('/admin/users')} onClick={go('/admin/users')}>
+              <ListItemText primary="ユーザー管理" />
+            </ListItemButton>
+          </List>
+        )}
       </Box>
     </Drawer>
   )
