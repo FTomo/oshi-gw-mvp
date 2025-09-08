@@ -13,7 +13,7 @@ import useAuthz from './hooks/useAuthz'
 import React from 'react'
 
 // Amplify UI（既存仕様）
-import { Authenticator } from '@aws-amplify/ui-react'
+import { Authenticator, ThemeProvider as AmplifyProvider } from '@aws-amplify/ui-react'
 import '@aws-amplify/ui-react/styles.css'
 import './App.css'
 import { I18n } from 'aws-amplify/utils'
@@ -86,17 +86,67 @@ function AdminGate({ children }: { children: React.ReactElement }) {
   return isAdmin ? children : <Navigate to="/" replace />
 }
 
+// 認証状態ブリッジ: Amplify の user が無い（サインアウト直後など）場合に Recoil をクリア
+function AuthStateSwitch({ user, onSignOut }: { user: AmplifyUserLike | undefined; onSignOut?: () => void }) {
+  const setUser = useSetRecoilState(currentUserAtom)
+  useEffect(() => {
+    if (!user) {
+      setUser(null)
+    }
+  }, [user, setUser])
+
+  if (!user) return <div>Loading...</div>
+  return <AuthenticatedApp amplifyUser={user} onSignOut={onSignOut ?? (() => {})} />
+}
+
 export default function App() {
+  // Amplify UI（Authenticator）用のシンプルなブランドテーマ
+  const amplifyTheme = {
+    name: 'brand-theme',
+    tokens: {
+      colors: {
+        font: {
+          interactive: { value: '#2c3e50' },
+        },
+      },
+      components: {
+        button: {
+          primary: {
+            backgroundColor: { value: '#2c3e50' },
+            color: { value: '#ffffff' },
+            _hover: { backgroundColor: { value: '#23313f' } },
+          },
+        },
+        link: {
+          color: { value: '#2c3e50' },
+          _hover: { color: { value: '#23313f' } },
+        },
+      },
+    },
+  } as const
+
+  const AuthHeader = () => (
+    <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 24, paddingBottom: 8 }}>
+      <img
+        src="/logo-smartworks.png"
+        alt="SmartWorks"
+        style={{ height: 40, objectFit: 'contain' }}
+      />
+    </div>
+  )
+
   return (
-    <Authenticator>
-      {({ signOut, user }) => {
-        const safeSignOut = () => { signOut?.() }
-        return user ? (
-          <AuthenticatedApp amplifyUser={user as AmplifyUserLike} onSignOut={safeSignOut} />
-        ) : (
-          <div>Loading...</div>
-        )
-      }}
-    </Authenticator>
+    <div style={{ marginTop: 24 }}>
+      <AmplifyProvider theme={amplifyTheme}>
+        <Authenticator components={{ Header: AuthHeader }}>
+          {({ signOut, user }) => (
+            <AuthStateSwitch
+              user={user as AmplifyUserLike | undefined}
+              onSignOut={() => { signOut?.() }}
+            />
+          )}
+        </Authenticator>
+      </AmplifyProvider>
+    </div>
   )
 }

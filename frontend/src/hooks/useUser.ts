@@ -64,7 +64,14 @@ export function useUser() {
           avatarUrl: authUser.avatarUrl ?? null,
           role: cognitoIsAdmin ? 'admin' : null,
         });
-  setMe((prev) => prev ?? { ...authUser, role: cognitoIsAdmin ? 'admin' : null });
+        if (created) {
+          // 作成後は DB を基準に最新の表示情報をセット（前ユーザーの情報が残らないように）
+          const base = toUserInfo(created)
+          setMe({ ...base })
+        } else {
+          // 失敗時は最小限の情報でセット
+          setMe({ sub: authUser.sub, email: authUser.email, name: authUser.name ?? '', avatarUrl: authUser.avatarUrl ?? '' })
+        }
         return created;
       }
     } finally {

@@ -106,8 +106,9 @@ export default function Profile() {
   if (!identityId) throw new Error('identityId not found in session')
   const key = `protected/${identityId}/avatars/${user.sub}.jpg`
   await uploadData({ path: key, data: blob, options: { contentType: 'image/jpeg' } }).result
-  // DB には再現可能なキーを保存
-  await updateMyProfile({ avatarUrl: key })
+  // DB 側 avatarUrl は AWSURL 型のため、有効なURL形式のマーカーを保存する（実データは S3 にあり、表示時は署名URLを生成）
+  const markerUrl = `https://avatar.local/${user.sub}.jpg`
+  await updateMyProfile({ avatarUrl: markerUrl })
   // 表示用には署名URLを都度生成
   const { url } = await getUrl({ path: key, options: { expiresIn: 60 * 60 * 24 * 7 } }) // 7日
       const signed = url.toString()

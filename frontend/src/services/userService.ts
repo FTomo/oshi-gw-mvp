@@ -69,10 +69,15 @@ export const userService = {
 
   async update(id: string, patch: Partial<Omit<DbUser, 'id'>>): Promise<DbUser | null> {
     try {
-      const safePatch = {
-        ...patch,
-        avatarUrl: patch.avatarUrl !== undefined && patch.avatarUrl !== '' ? patch.avatarUrl : null,
-      };
+      // 明示的に指定されたフィールドのみ送る（意図せぬ avatarUrl=null 更新を防ぐ）
+      const safePatch: Record<string, unknown> = {}
+      if (patch.email !== undefined) safePatch.email = patch.email
+      if (patch.name !== undefined) safePatch.name = patch.name
+      if (patch.role !== undefined) safePatch.role = patch.role
+      if (patch.avatarUrl !== undefined) {
+        safePatch.avatarUrl = patch.avatarUrl !== '' ? patch.avatarUrl : null
+      }
+
       const res = await client.graphql({
         query: updateUser,
         variables: { input: { id, ...safePatch } },
@@ -114,19 +119,14 @@ export const userService = {
       }
 
       // 最小差分更新
-      const patch: Partial<DbUser> = {};
+  const patch: Partial<DbUser> = {};
       if (!existing.email && params.email) patch.email = params.email;
       if ((!existing.name && params.name) || (existing.name && params.name && existing.name !== params.name)) {
         patch.name = params.name;
       }
-      if (
-        (!existing.avatarUrl && params.avatarUrl) ||
-        (existing.avatarUrl && params.avatarUrl && existing.avatarUrl !== params.avatarUrl)
-      ) {
-        patch.avatarUrl = params.avatarUrl !== undefined && params.avatarUrl !== '' ? params.avatarUrl : null;
-      }
+  // プロフィール同期では avatarUrl は基本的に触らない（アップロード時のみ別経路で更新）
 
-      if (Object.keys(patch).length > 0) {
+  if (Object.keys(patch).length > 0) {
         return await this.update(params.sub, patch);
       }
       return existing;

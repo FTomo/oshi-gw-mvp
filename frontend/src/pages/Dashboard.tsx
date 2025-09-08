@@ -129,10 +129,6 @@ export default function Dashboard() {
                 ))}
               </Stack>
             )}
-            {/* 右下ボタン: プロジェクト管理へ */}
-            <Box position="absolute" right={8} bottom={8}>
-              <Button size="small" variant="outlined" onClick={() => navigate('/projects')}>プロジェクト管理へ</Button>
-            </Box>
             </CardContent>
             <CardActions sx={{ justifyContent: 'flex-end', pt: 0 }}>
               <Button size="small" variant="outlined" onClick={() => navigate('/projects')}>プロジェクト管理へ</Button>
