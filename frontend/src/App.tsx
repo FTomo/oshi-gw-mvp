@@ -95,8 +95,9 @@ function AuthStateSwitch({ user, onSignOut }: { user: AmplifyUserLike | undefine
     }
   }, [user, setUser])
 
-  if (!user) return <div>Loading...</div>
-  return <AuthenticatedApp amplifyUser={user} onSignOut={onSignOut ?? (() => {})} />
+  if (!user) return null
+  // user 切替時に完全にマウントし直して副作用・ローカル状態をリセット
+  return <AuthenticatedApp key={user.userId ?? user.username ?? 'unknown'} amplifyUser={user} onSignOut={onSignOut ?? (() => {})} />
 }
 
 export default function App() {
@@ -136,7 +137,7 @@ export default function App() {
   )
 
   return (
-    <div style={{ marginTop: 24 }}>
+    <div>
       <AmplifyProvider theme={amplifyTheme}>
         <Authenticator components={{ Header: AuthHeader }}>
           {({ signOut, user }) => (

@@ -193,6 +193,13 @@ export default function TaskDetail() {
         end: today,
         progress: 0,
         hideChildren: true,
+        // 視覚的には非表示にする
+        styles: {
+          backgroundColor: 'transparent',
+          backgroundSelectedColor: 'transparent',
+          progressColor: 'transparent',
+          progressSelectedColor: 'transparent',
+        },
       },
     ] as any[];
   }, [ganttTasks]);
@@ -223,6 +230,10 @@ export default function TaskDetail() {
       </div>
     );
   }, []);
+
+  // タスクが無い場合はツールチップ自体を無効化（黄色い三角の吹き出しを抑止）
+  const DisabledTooltip = React.useCallback(() => null, []);
+  const tooltipComp = ganttTasks.length === 0 ? (DisabledTooltip as any) : (TooltipContent as any);
 
   return (
     <Box className={styles.taskDetail}>
@@ -275,6 +286,7 @@ export default function TaskDetail() {
                   setEditStart(cur.startDate ? String(cur.startDate).slice(0, 10) : '');
                   setEditEnd(cur.endDate ? String(cur.endDate).slice(0, 10) : '');
                   setEditAssigneeId(cur.level === 1 ? null : (cur.assigneeUserId ?? null));
+                  setEditProgress(typeof cur.progress === 'number' ? cur.progress : 0);
                   setOpenEdit(true);
                 }}
               >
@@ -312,7 +324,7 @@ export default function TaskDetail() {
               listCellWidth={`${listWidthPx}px`}
               columnWidth={48}
               rowHeight={40}
-              TooltipContent={TooltipContent as any}
+              TooltipContent={tooltipComp}
               onDateChange={(task: any) => {
                 if (!task || task.id === 'virtual-root') return;
                 const start = task.start instanceof Date ? task.start.toISOString().slice(0, 10) : null;
@@ -443,8 +455,8 @@ export default function TaskDetail() {
                         <div style={{ borderRight: '1px solid #eee', paddingRight: 8, fontWeight: appItem?.level === 1 ? 600 as any : 400, textAlign: 'left' }}>
                           {t.name}
                         </div>
-                        <div style={{ borderRight: '1px solid #eee', paddingRight: 8, fontWeight: appItem?.level === 1 ? 600 as any : 400 }}>{t.start?.toLocaleDateString?.() ?? ''}</div>
-                        <div style={{ borderRight: '1px solid #eee', paddingRight: 8, fontWeight: appItem?.level === 1 ? 600 as any : 400 }}>{t.end?.toLocaleDateString?.() ?? ''}</div>
+                        <div style={{ borderRight: '1px solid #eee', paddingRight: 8, fontWeight: appItem?.level === 1 ? 600 as any : 400 }}>{t.id === 'virtual-root' ? '' : (t.start?.toLocaleDateString?.() ?? '')}</div>
+                        <div style={{ borderRight: '1px solid #eee', paddingRight: 8, fontWeight: appItem?.level === 1 ? 600 as any : 400 }}>{t.id === 'virtual-root' ? '' : (t.end?.toLocaleDateString?.() ?? '')}</div>
                         <div style={{ fontWeight: appItem?.level === 1 ? 600 as any : 400 }}>{typeof t.progress === 'number' ? `${t.progress}%` : ''}</div>
                       </div>
                     );
@@ -510,6 +522,7 @@ export default function TaskDetail() {
                   setEditStart(cur.startDate ? String(cur.startDate).slice(0, 10) : '');
                   setEditEnd(cur.endDate ? String(cur.endDate).slice(0, 10) : '');
                   setEditAssigneeId(cur.level === 1 ? null : (cur.assigneeUserId ?? null));
+                  setEditProgress(typeof cur.progress === 'number' ? cur.progress : 0);
                   setOpenEdit(true);
                 }}
               >
@@ -883,8 +896,23 @@ export default function TaskDetail() {
           <TextField label="メールアドレス" value={pt.email ?? ''} onChange={e => setEditParticipants(prev => prev.map((p, idx) => idx === i ? { ...p, email: e.target.value } : p))} size="small" disabled={isSelf} placeholder="user@example.com" />
                       <TextField label="氏名" value={pt.name} onChange={e => setEditParticipants(prev => prev.map((p, idx) => idx === i ? { ...p, name: e.target.value } : p))} size="small" />
                       <TextField label="表示名" value={pt.displayName} onChange={e => setEditParticipants(prev => prev.map((p, idx) => idx === i ? { ...p, displayName: e.target.value } : p))} size="small" />
-                      <Button size="small" variant={pt.canEdit ? 'contained' : 'outlined'} onClick={() => setEditParticipants(prev => prev.map((p, idx) => idx === i ? { ...p, canEdit: !p.canEdit } : p))} disabled={isSelf}>編集可</Button>
-                      <Button size="small" variant={pt.canView ? 'contained' : 'outlined'} onClick={() => setEditParticipants(prev => prev.map((p, idx) => idx === i ? { ...p, canView: !p.canView } : p))} disabled={isSelf}>閲覧可</Button>
+                      <Button
+                        size="small"
+                        variant={pt.canEdit ? 'contained' : 'outlined'}
+                        onClick={() => setEditParticipants(prev => prev.map((p, idx) => {
+                          if (idx !== i) return p;
+                          const next = { ...p, canEdit: !p.canEdit } as ProjectParticipant;
+                          if (next.canEdit) next.canView = true; // 編集可ON時は閲覧可もON
+                          return next;
+                        }))}
+                        disabled={isSelf}
+                      >編集可</Button>
+                      <Button
+                        size="small"
+                        variant={pt.canView ? 'contained' : 'outlined'}
+                        onClick={() => setEditParticipants(prev => prev.map((p, idx) => idx === i ? { ...p, canView: !p.canView } : p))}
+                        disabled={isSelf}
+                      >閲覧可</Button>
                       <Button size="small" color="error" onClick={() => setEditParticipants(prev => prev.filter((_, idx) => idx !== i))} disabled={isSelf}>削除</Button>
                     </>
                   );

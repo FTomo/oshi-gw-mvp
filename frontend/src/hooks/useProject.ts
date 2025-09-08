@@ -13,6 +13,7 @@ export function useProject() {
 			const res = await projectService.list(200);
 			// 権限: admin は全件, それ以外は managerUserId==me.sub か editableUserIdsJson/readableUserIdsJson に含まれる
 			const mySub = me?.sub;
+			const myEmail = me?.email?.toLowerCase?.();
 			const isAdmin = false; // 将来: me.role==='admin' 等
 			const filtered = res.items.filter(p => {
 				if (isAdmin) return true;
@@ -20,7 +21,15 @@ export function useProject() {
 				if (p.managerUserId === mySub) return true;
 				const editable: string[] = JSON.parse(p.editableUserIdsJson ?? '[]');
 				const readable: string[] = JSON.parse(p.readableUserIdsJson ?? '[]');
-				return editable.includes(mySub) || readable.includes(mySub);
+				if (editable.includes(mySub) || readable.includes(mySub)) return true;
+				// participantsJson に自分が含まれていれば表示対象（userId / assigneeUserId / email で判定）
+				try {
+					const arr: any[] = p.participantsJson ? JSON.parse(p.participantsJson) : [];
+					if (Array.isArray(arr)) {
+						return arr.some((x: any) => x?.userId === mySub || x?.assigneeUserId === mySub || (!!myEmail && (x?.email?.toLowerCase?.() === myEmail)));
+					}
+				} catch { /* ignore */ }
+				return false;
 			});
 			setItems(filtered);
 			return filtered;

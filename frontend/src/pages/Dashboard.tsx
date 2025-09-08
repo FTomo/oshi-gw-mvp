@@ -15,6 +15,7 @@ import { useNavigate } from 'react-router-dom'
 export default function Dashboard() {
   const { me } = useUser()
   const navigate = useNavigate()
+  // me 切替時の残留を避けるため、必要箇所は副作用で依存済み（useEffectのdepがme?.sub）。
 
   // 自分の担当タスク収集
   const [loadingMy, setLoadingMy] = useState(false)

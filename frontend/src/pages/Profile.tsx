@@ -4,7 +4,7 @@
 import { useRecoilState } from 'recoil'
 import { currentUserAtom } from '../state/auth'
 import { Box, Button, Snackbar, Stack, TextField, Typography, Avatar, Dialog, DialogTitle, DialogContent, DialogActions, Slider, Alert } from '@mui/material'
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useUser } from '../hooks/useUser'
 import Cropper, { type Area } from 'react-easy-crop'
 import { uploadData, getUrl } from 'aws-amplify/storage'
@@ -18,6 +18,12 @@ export default function Profile() {
   const [name, setName] = useState(user?.name ?? '')
   const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl ?? '')
   const { updateMyProfile } = useUser()
+
+  // 認証ユーザーが切り替わったらローカル状態も同期（前ユーザーの表示名が残るのを防止）
+  useEffect(() => {
+    setName(user?.name ?? '')
+    setAvatarUrl(user?.avatarUrl ?? '')
+  }, [user?.sub, user?.name, user?.avatarUrl])
 
   // 画像選択 + トリミング用状態
   const fileInputRef = useRef<HTMLInputElement | null>(null)

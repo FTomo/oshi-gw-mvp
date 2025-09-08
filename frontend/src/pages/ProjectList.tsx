@@ -36,11 +36,12 @@ export default function ProjectList() {
 
 	const isParticipant = (p: any) => {
 		if (!me?.sub) return false;
+		const myEmail = me?.email?.toLowerCase?.();
 		// participantsJson に自分が含まれるか
 		try {
 			const raw: any[] = p.participantsJson ? JSON.parse(p.participantsJson) : [];
 			if (Array.isArray(raw)) {
-				if (raw.some((x: any) => x?.userId === me.sub || x?.assigneeUserId === me.sub)) return true;
+				if (raw.some((x: any) => x?.userId === me.sub || x?.assigneeUserId === me.sub || (!!myEmail && (x?.email?.toLowerCase?.() === myEmail)))) return true;
 			}
 		} catch { /* ignore */ }
 		// editable/readable に自分が含まれるか
@@ -72,8 +73,17 @@ export default function ProjectList() {
 	};
 
 		const addParticipant = () => setParticipants(p => [...p, { assigneeUserId: generateAssigneeId(), name: '', displayName: '' } as ProjectParticipant]);
-		const updateParticipant = (i: number, field: keyof ProjectParticipant, val: string | boolean) =>
-		setParticipants(prev => prev.map((p, idx) => (idx === i ? { ...p, [field]: val } : p)));
+		const updateParticipant = (i: number, field: keyof ProjectParticipant, val: string | boolean) => {
+			setParticipants(prev => prev.map((p, idx) => {
+				if (idx !== i) return p;
+				const next = { ...p, [field]: val } as ProjectParticipant;
+				// 編集可をONにしたら閲覧可も自動でON
+				if (field === 'canEdit' && val === true) {
+					next.canView = true;
+				}
+				return next;
+			}));
+		};
 	const removeParticipant = (i: number) => setParticipants(prev => prev.filter((_, idx) => idx !== i));
 
 	const submitNew = async () => {
