@@ -2,6 +2,7 @@
 // src/App.tsx（Hook順序エラー修正）
 // =============================
 import { Routes, Route, Navigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import Layout from './components/layout/Layout'
 import Dashboard from './pages/Dashboard'
 import Profile from './pages/Profile'
@@ -89,11 +90,22 @@ function AdminGate({ children }: { children: React.ReactElement }) {
 // 認証状態ブリッジ: Amplify の user が無い（サインアウト直後など）場合に Recoil をクリア
 function AuthStateSwitch({ user, onSignOut }: { user: AmplifyUserLike | undefined; onSignOut?: () => void }) {
   const setUser = useSetRecoilState(currentUserAtom)
+  const navigate = useNavigate()
+  const location = useLocation()
   useEffect(() => {
     if (!user) {
       setUser(null)
     }
   }, [user, setUser])
+
+  // ログイン毎に必ずダッシュボードへ初期表示を統一
+  useEffect(() => {
+    if (user) {
+      if (location.pathname !== '/') {
+        navigate('/', { replace: true })
+      }
+    }
+  }, [user, navigate, location.pathname])
 
   if (!user) return null
   // user 切替時に完全にマウントし直して副作用・ローカル状態をリセット
