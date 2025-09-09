@@ -43,5 +43,29 @@
         "oshigw": {}
       }
     }
+  },
+  "guest": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-oshigw-guest-e4cd9-authRole",
+      "UnauthRoleArn": "arn:aws:iam::830410657499:role/amplify-oshigw-guest-e4cd9-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::830410657499:role/amplify-oshigw-guest-e4cd9-authRole",
+      "Region": "ap-northeast-1",
+      "DeploymentBucketName": "amplify-oshigw-guest-e4cd9-deployment",
+      "UnauthRoleName": "amplify-oshigw-guest-e4cd9-unauthRole",
+      "StackName": "amplify-oshigw-guest-e4cd9",
+      "StackId": "arn:aws:cloudformation:ap-northeast-1:830410657499:stack/amplify-oshigw-guest-e4cd9/481b9f20-8bfa-11f0-b149-0e5a647c7f51",
+      "AmplifyAppId": "dwqueo8w7nvz2"
+    },
+    "categories": {
+      "auth": {
+        "oshigw51801446": {}
+      },
+      "api": {
+        "oshigw": {}
+      },
+      "storage": {
+        "s3oshigw": {}
+      }
+    }
   }
 }

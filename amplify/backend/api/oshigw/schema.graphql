@@ -29,7 +29,9 @@ type Attendance
 type Project @model
 @auth(rules: [
   { allow: owner, ownerField: "managerUserId", identityClaim: "sub" },
-  { allow: groups, groups: ["admin"] }
+  { allow: groups, groups: ["admin"] },
+  # 参加者判定はアプリ側でフィルタする前提で、一旦全認証ユーザーに read を許可（MVP簡易対応）
+  { allow: private, operations: [read] }
 ]) {
   id: ID!
   name: String!
@@ -46,7 +48,9 @@ type Project @model
 type Task @model
 @auth(rules: [
   { allow: owner, ownerField: "projectManagerUserId", identityClaim: "sub" },
-  { allow: groups, groups: ["admin"] }
+  { allow: groups, groups: ["admin"] },
+  # プロジェクト一覧と同様、タスクも参加者表示のため read を一時的に全認証ユーザーへ許可
+  { allow: private, operations: [read] }
 ]) {
   id: ID!
   # projectId を起点に 2 つのインデックス (createdAt / numberPath) を付与

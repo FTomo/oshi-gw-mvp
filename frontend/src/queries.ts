@@ -190,7 +190,7 @@ export const listTasks = /* GraphQL */ `query ListTasks(
   }
 }
 ` as GeneratedQuery<APITypes.ListTasksQueryVariables, APITypes.ListTasksQuery>;
-export const tasksByProjectId = /* GraphQL */ `query TasksByProjectId(
+export const tasksByProject = /* GraphQL */ `query TasksByProject(
   $projectId: ID!
   $createdAt: ModelStringKeyConditionInput
   $sortDirection: ModelSortDirection
@@ -198,7 +198,7 @@ export const tasksByProjectId = /* GraphQL */ `query TasksByProjectId(
   $limit: Int
   $nextToken: String
 ) {
-  tasksByProjectId(
+  tasksByProject(
     projectId: $projectId
     createdAt: $createdAt
     sortDirection: $sortDirection
@@ -230,9 +230,92 @@ export const tasksByProjectId = /* GraphQL */ `query TasksByProjectId(
   }
 }
 ` as GeneratedQuery<
-  APITypes.TasksByProjectIdQueryVariables,
-  APITypes.TasksByProjectIdQuery
+  APITypes.TasksByProjectQueryVariables,
+  APITypes.TasksByProjectQuery
 >;
-// NOTE: schema 改修前のインデックス用クエリ (tasksByProjectNumberPath, tasksByParent) は
-// まだ codegen に反映されていないため一旦削除 / 無効化。
-// 必要になった段階で amplify push -> codegen 後に再生成された queries.ts を使用してください。
+export const tasksByProjectNumberPath = /* GraphQL */ `query TasksByProjectNumberPath(
+  $projectId: ID!
+  $numberPath: ModelStringKeyConditionInput
+  $sortDirection: ModelSortDirection
+  $filter: ModelTaskFilterInput
+  $limit: Int
+  $nextToken: String
+) {
+  tasksByProjectNumberPath(
+    projectId: $projectId
+    numberPath: $numberPath
+    sortDirection: $sortDirection
+    filter: $filter
+    limit: $limit
+    nextToken: $nextToken
+  ) {
+    items {
+      id
+      projectId
+      parentTaskId
+      projectManagerUserId
+      assigneeUserId
+      level
+      sequence
+      numberPath
+      title
+      description
+      startDate
+      endDate
+      progress
+      status
+      createdAt
+      updatedAt
+      __typename
+    }
+    nextToken
+    __typename
+  }
+}
+` as GeneratedQuery<
+  APITypes.TasksByProjectNumberPathQueryVariables,
+  APITypes.TasksByProjectNumberPathQuery
+>;
+export const tasksByParent = /* GraphQL */ `query TasksByParent(
+  $parentTaskId: ID!
+  $sequence: ModelIntKeyConditionInput
+  $sortDirection: ModelSortDirection
+  $filter: ModelTaskFilterInput
+  $limit: Int
+  $nextToken: String
+) {
+  tasksByParent(
+    parentTaskId: $parentTaskId
+    sequence: $sequence
+    sortDirection: $sortDirection
+    filter: $filter
+    limit: $limit
+    nextToken: $nextToken
+  ) {
+    items {
+      id
+      projectId
+      parentTaskId
+      projectManagerUserId
+      assigneeUserId
+      level
+      sequence
+      numberPath
+      title
+      description
+      startDate
+      endDate
+      progress
+      status
+      createdAt
+      updatedAt
+      __typename
+    }
+    nextToken
+    __typename
+  }
+}
+` as GeneratedQuery<
+  APITypes.TasksByParentQueryVariables,
+  APITypes.TasksByParentQuery
+>;
