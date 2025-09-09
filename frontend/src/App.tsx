@@ -3,6 +3,7 @@
 // =============================
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useRef } from 'react'
 import Layout from './components/layout/Layout'
 import Dashboard from './pages/Dashboard'
 import Profile from './pages/Profile'
@@ -92,18 +93,23 @@ function AuthStateSwitch({ user, onSignOut }: { user: AmplifyUserLike | undefine
   const setUser = useSetRecoilState(currentUserAtom)
   const navigate = useNavigate()
   const location = useLocation()
+  const initialRedirectDoneRef = useRef(false)
   useEffect(() => {
     if (!user) {
       setUser(null)
     }
   }, [user, setUser])
 
-  // ログイン毎に必ずダッシュボードへ初期表示を統一
+  // ログイン直後のみ 1 回だけダッシュボードへ遷移（以後の通常遷移は妨げない）
   useEffect(() => {
-    if (user) {
+    if (user && !initialRedirectDoneRef.current) {
       if (location.pathname !== '/') {
         navigate('/', { replace: true })
       }
+      initialRedirectDoneRef.current = true
+    }
+    if (!user) {
+      initialRedirectDoneRef.current = false
     }
   }, [user, navigate, location.pathname])
 
