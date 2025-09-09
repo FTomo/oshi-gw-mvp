@@ -22,6 +22,7 @@ export default function TaskDetail() {
   const [loading, setLoading] = useState(true);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [participants, setParticipants] = useState<ProjectParticipant[]>([]);
+  const [canEditProject, setCanEditProject] = useState<boolean>(false); // 権限制御用
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.Month); // ボタンブロックB: 月/週/日
   const [fullScreen, setFullScreen] = useState(false); // ボタンブロックB: 全画面
   const [openParticipants, setOpenParticipants] = useState(false);
@@ -110,7 +111,7 @@ export default function TaskDetail() {
     (async () => {
       setLoading(true);
       try {
-        const p = await getById(projectId);
+  const p = await getById(projectId);
         setProjectName(p?.name ?? '');
         if (p?.participantsJson) {
           try {
@@ -152,6 +153,32 @@ export default function TaskDetail() {
             setParticipants([]);
           }
         }
+        // 権限制御: 自分が manager か participantsJson 内で canEdit=true か editableUserIdsJson に含まれるか
+        try {
+          const mySub = me?.sub;
+          if (p && mySub) {
+            if (p.managerUserId === mySub) {
+              setCanEditProject(true);
+            } else {
+              let editableFlag = false;
+              try {
+                const editableArr: string[] = JSON.parse(p.editableUserIdsJson ?? '[]');
+                if (Array.isArray(editableArr) && editableArr.includes(mySub)) editableFlag = true;
+              } catch { /* ignore */ }
+              if (!editableFlag && p.participantsJson) {
+                try {
+                  const arr: any[] = JSON.parse(p.participantsJson);
+                  if (Array.isArray(arr)) {
+                    editableFlag = arr.some(x => (x?.userId === mySub || x?.assigneeUserId === mySub) && x?.canEdit === true);
+                  }
+                } catch { /* ignore */ }
+              }
+              setCanEditProject(editableFlag);
+            }
+          } else {
+            setCanEditProject(false);
+          }
+        } catch { setCanEditProject(false); }
         await loadByProject(projectId);
       } finally {
         setLoading(false);
@@ -239,7 +266,7 @@ export default function TaskDetail() {
     <Box className={styles.taskDetail}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="h6">プロジェクト: {projectName}</Typography>
-        <Button variant="contained" onClick={() => { setTitle(''); setRootStart(''); setRootEnd(''); setOpenNew(true); }}>ルートタスク追加</Button>
+  <Button variant="contained" disabled={!canEditProject} onClick={() => { setTitle(''); setRootStart(''); setRootEnd(''); setOpenNew(true); }}>ルートタスク追加</Button>
       </Box>
 
       <Card>
@@ -254,14 +281,14 @@ export default function TaskDetail() {
                   最初のタスクを編集
                 </Button>
               )}
-              <Button size="small" variant="outlined" onClick={() => {
+              <Button size="small" variant="outlined" disabled={!canEditProject} onClick={() => {
                 setEditParticipants(participants);
                 setOpenParticipants(true);
               }}>担当者</Button>
               <Button
                 size="small"
                 variant="contained"
-                disabled={!selectedTaskId || !items.find(t => t.id === selectedTaskId && t.level === 1)}
+                disabled={!canEditProject || !selectedTaskId || !items.find(t => t.id === selectedTaskId && t.level === 1)}
                 onClick={() => {
                   const parent = items.find(t => t.id === selectedTaskId);
                   if (!parent) return;
@@ -278,7 +305,7 @@ export default function TaskDetail() {
               <Button
                 size="small"
                 variant="outlined"
-                disabled={!selectedTaskId}
+                disabled={!canEditProject || !selectedTaskId}
                 onClick={() => {
                   const cur = items.find(t => t.id === selectedTaskId);
                   if (!cur) return;
@@ -296,7 +323,7 @@ export default function TaskDetail() {
                 size="small"
                 variant="outlined"
                 color="error"
-                disabled={!selectedTaskId}
+                disabled={!canEditProject || !selectedTaskId}
                 onClick={() => setOpenDelete1(true)}
               >
                 削除
@@ -486,18 +513,18 @@ export default function TaskDetail() {
           <Box display="flex" className={styles.toolbarA} justifyContent="space-between" alignItems="center" mb={1}>
             <Box display="flex" className={styles.toolbarA}>
               {ganttTasks.length === 0 && (
-                <Button size="small" variant="outlined" onClick={() => { setTitle(''); setRootStart(''); setRootEnd(''); setOpenNew(true); }}>
+                <Button size="small" variant="outlined" disabled={!canEditProject} onClick={() => { setTitle(''); setRootStart(''); setRootEnd(''); setOpenNew(true); }}>
                   最初のタスクを編集
                 </Button>
               )}
-              <Button size="small" variant="outlined" onClick={() => {
+              <Button size="small" variant="outlined" disabled={!canEditProject} onClick={() => {
                 setEditParticipants(participants);
                 setOpenParticipants(true);
               }}>担当者</Button>
               <Button
                 size="small"
                 variant="contained"
-                disabled={!selectedTaskId || !items.find(t => t.id === selectedTaskId && t.level === 1)}
+                disabled={!canEditProject || !selectedTaskId || !items.find(t => t.id === selectedTaskId && t.level === 1)}
                 onClick={() => {
                   const parent = items.find(t => t.id === selectedTaskId);
                   if (!parent) return;
@@ -514,7 +541,7 @@ export default function TaskDetail() {
               <Button
                 size="small"
                 variant="outlined"
-                disabled={!selectedTaskId}
+                disabled={!canEditProject || !selectedTaskId}
                 onClick={() => {
                   const cur = items.find(t => t.id === selectedTaskId);
                   if (!cur) return;
@@ -532,7 +559,7 @@ export default function TaskDetail() {
                 size="small"
                 variant="outlined"
                 color="error"
-                disabled={!selectedTaskId}
+                disabled={!canEditProject || !selectedTaskId}
                 onClick={() => setOpenDelete1(true)}
               >
                 削除

@@ -57,7 +57,7 @@ export default function ProjectList() {
 	const createdByMe = me ? items.filter(p => p.managerUserId === me.sub) : items;
 	const participating = me ? items.filter(p => p.managerUserId !== me.sub && isParticipant(p)) : [];
 
-	const openParticipantDialog = (pid: string, currentJson?: string | null) => {
+	const openParticipantDialog = (pid: string, currentJson?: string | null, readOnly = false) => {
 		setEditTargetId(pid);
 			const raw: any[] = currentJson ? JSON.parse(currentJson) : [];
 						const arr: ProjectParticipant[] = (Array.isArray(raw) ? raw : []).map((p: any) => ({
@@ -69,7 +69,7 @@ export default function ProjectList() {
 				canEdit: !!p.canEdit,
 				canView: !!p.canView,
 			}));
-			setParticipants(arr);
+			setParticipants(arr.map(x => readOnly ? { ...x, canEdit: false } : x));
 	};
 
 		const addParticipant = () => setParticipants(p => [...p, { assigneeUserId: generateAssigneeId(), name: '', displayName: '' } as ProjectParticipant]);
@@ -144,6 +144,25 @@ export default function ProjectList() {
 		return isOwner || isAdmin;
 	};
 
+	// 閲覧専用判定 (editableUserIdsJson or participantsJson.canEdit が false のみ)
+	const isReadOnly = (p: any) => {
+		if (!me?.sub) return true;
+		if (p.managerUserId === me.sub) return false; // owner は編集可
+		try {
+			const editable: string[] = JSON.parse(p.editableUserIdsJson ?? '[]');
+			if (Array.isArray(editable) && editable.includes(me.sub)) return false;
+		} catch { /* ignore */ }
+		// participantsJson 内で自身が canEdit=true なら編集可
+		try {
+			const arr: any[] = p.participantsJson ? JSON.parse(p.participantsJson) : [];
+			if (Array.isArray(arr)) {
+				const rec = arr.find(x => x?.userId === me.sub || x?.assigneeUserId === me.sub || x?.email?.toLowerCase?.() === me.email?.toLowerCase?.());
+				if (rec && rec.canEdit) return false;
+			}
+		} catch { /* ignore */ }
+		return true; // 編集可条件に当たらなければ閲覧のみ
+	};
+
 	const performDelete = async () => {
 		if (!deleteTarget) return;
 		// プロジェクト名完全一致が必要
@@ -184,7 +203,7 @@ export default function ProjectList() {
 												</Box>
 												<Box display="flex" gap={1} alignItems="center">
 													<Chip size="small" label="作成者" color="primary" variant="outlined" />
-													<Button size="small" variant="outlined" onClick={(e) => { e.stopPropagation(); openParticipantDialog(p.id, p.participantsJson); }}>担当者</Button>
+													<Button size="small" variant="outlined" onClick={(e) => { e.stopPropagation(); openParticipantDialog(p.id, p.participantsJson, false); }}>担当者</Button>
 													{canDeleteProject(p) && (
 														<Button size="small" color="error" onClick={(e) => { e.stopPropagation(); openDeleteFlow(p); }}>削除</Button>
 													)}
@@ -213,8 +232,8 @@ export default function ProjectList() {
 												</Box>
 												<Box display="flex" gap={1} alignItems="center">
 													<Chip size="small" label="担当者" color="default" variant="outlined" />
-													<Button size="small" variant="outlined" onClick={(e) => { e.stopPropagation(); openParticipantDialog(p.id, p.participantsJson); }}>担当者</Button>
-													{canDeleteProject(p) && (
+													<Button size="small" variant="outlined" disabled={isReadOnly(p)} onClick={(e) => { e.stopPropagation(); openParticipantDialog(p.id, p.participantsJson, isReadOnly(p)); }}>担当者</Button>
+													{canDeleteProject(p) && !isReadOnly(p) && (
 														<Button size="small" color="error" onClick={(e) => { e.stopPropagation(); openDeleteFlow(p); }}>削除</Button>
 													)}
 												</Box>
