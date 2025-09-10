@@ -2,7 +2,7 @@
 // src/App.tsx（Hook順序エラー修正）
 // =============================
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useRef } from 'react'
 import Layout from './components/layout/Layout'
 import Dashboard from './pages/Dashboard'
@@ -92,26 +92,24 @@ function AdminGate({ children }: { children: React.ReactElement }) {
 function AuthStateSwitch({ user, onSignOut }: { user: AmplifyUserLike | undefined; onSignOut?: () => void }) {
   const setUser = useSetRecoilState(currentUserAtom)
   const navigate = useNavigate()
-  const location = useLocation()
-  const initialRedirectDoneRef = useRef(false)
+  const prevUserIdRef = useRef<string | null>(null)
   useEffect(() => {
     if (!user) {
       setUser(null)
     }
   }, [user, setUser])
 
-  // ログイン直後のみ 1 回だけダッシュボードへ遷移（以後の通常遷移は妨げない）
+  // ユーザーIDが変わったタイミングでのみ 1 回ダッシュボードへ遷移
   useEffect(() => {
-    if (user && !initialRedirectDoneRef.current) {
-      if (location.pathname !== '/') {
-        navigate('/', { replace: true })
-      }
-      initialRedirectDoneRef.current = true
+    const currentId = user?.userId ?? user?.username ?? (user as any)?.attributes?.sub ?? null
+    if (currentId && prevUserIdRef.current !== currentId) {
+      prevUserIdRef.current = currentId
+      navigate('/', { replace: true })
     }
-    if (!user) {
-      initialRedirectDoneRef.current = false
+    if (!currentId) {
+      prevUserIdRef.current = null
     }
-  }, [user, navigate, location.pathname])
+  }, [user, navigate])
 
   if (!user) return null
   // user 切替時に完全にマウントし直して副作用・ローカル状態をリセット
