@@ -41,6 +41,9 @@
       },
       "api": {
         "oshigw": {}
+      },
+      "storage": {
+        "s3oshigw": {}
       }
     }
   },
